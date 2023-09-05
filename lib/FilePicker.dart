@@ -15,8 +15,8 @@ class _FilePickerPageState extends State<FilePickerPage> {
   PlatformFile? pickedFile;
   bool isLoading = false;
   File? fileToDisplay;
-
-  void pickFile() async {
+  String? FileContent;
+  void pickFile(String? content) async {
     try {
       setState(() {
         isLoading = true;
@@ -34,6 +34,12 @@ class _FilePickerPageState extends State<FilePickerPage> {
           fileToDisplay = File(pickedFile!.path!);
 
           print('File name: $_fileName');
+
+          FileContent = await fileToDisplay!.readAsString();
+          setState(() {
+            content = FileContent.toString();
+          });
+          print(content);
         }
       }
 
@@ -50,13 +56,14 @@ class _FilePickerPageState extends State<FilePickerPage> {
     return Scaffold(
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Center(
             child: isLoading
                 ? CircularProgressIndicator()
                 : TextButton(
                     onPressed: () {
-                      pickFile();
+                      pickFile(FileContent);
                     },
                     child: Text('Pick File'),
                   ),
@@ -65,7 +72,8 @@ class _FilePickerPageState extends State<FilePickerPage> {
             SizedBox(
               height: 300,
               width: 400,
-              child: Image.file(fileToDisplay!),
+              //child: Image.file(fileToDisplay!),
+              child: Text(FileContent!),
             ),
         ],
       ),

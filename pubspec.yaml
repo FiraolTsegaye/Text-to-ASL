@@ -33,7 +33,7 @@ dependencies:
   speech_to_text: ^6.3.0
   file_picker: ^3.0.0
   open_file: ^3.3.2
-  file_selector: ^1.0.1
+  #file_selector: ^1.0.1
   #flutter_gifimage: any
 
   # The following adds the Cupertino Icons font to your application.

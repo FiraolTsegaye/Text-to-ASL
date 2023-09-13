@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-class Text__SASL extends StatefulWidget {
+class Text_ASL_amh extends StatefulWidget {
   @override
   _Text_ASLState createState() => _Text_ASLState();
 }
 
-class _Text_ASLState extends State<Text__SASL> {
+class _Text_ASLState extends State<Text_ASL_amh> {
   final TextEditingController _textEditingController = TextEditingController();
   List<String> words = [];
   bool displayBoxVisible = false;
@@ -131,7 +131,7 @@ class _Text_ASLState extends State<Text__SASL> {
                         itemBuilder: (context, index) {
                           String word = words[index];
                           return Image.asset(
-                            'images/$word.gif',
+                            'EthSL/$word.gif',
                             width: 200.0,
                             height: 200.0,
                           );
@@ -165,7 +165,7 @@ class _Text_ASLState extends State<Text__SASL> {
                       controller: _textEditingController,
                       maxLines: null,
                       decoration: InputDecoration(
-                        hintText: 'Enter text',
+                        hintText: 'Enter Amharic text',
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.all(16.0),
                         suffixIcon: showClearIcon

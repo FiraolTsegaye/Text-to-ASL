@@ -1,5 +1,5 @@
-import 'package:first/Start.dart';
 import 'package:flutter/material.dart';
+import 'package:first/choose.dart';
 
 class HomePage extends StatelessWidget {
   @override
@@ -11,7 +11,9 @@ class HomePage extends StatelessWidget {
         appBar: AppBar(
           backgroundColor: Colors.black,
           leading: CircleAvatar(
-              backgroundImage: AssetImage('images/Icon2.png'), radius: 20),
+            backgroundImage: AssetImage('images/Icon2.png'),
+            radius: 20,
+          ),
           title: Padding(
             padding: const EdgeInsets.only(left: 10),
             child: Text(
@@ -34,11 +36,12 @@ class HomePage extends StatelessWidget {
               SizedBox(height: 20),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                    backgroundColor: Color.fromARGB(248, 18, 202, 156)),
+                  backgroundColor: Color.fromARGB(248, 18, 202, 156),
+                ),
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => SecondStart()),
+                    MaterialPageRoute(builder: (context) => Eth_choose()),
                   );
                 },
                 child: Text(

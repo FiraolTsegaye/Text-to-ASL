@@ -179,33 +179,6 @@ class SecStart extends StatelessWidget {
                     ),
                   ),
                 ),
-                SizedBox(width: 20),
-                Container(
-                  height: 160,
-                  width: 160,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(15),
-                    child: Container(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Color.fromARGB(248, 18, 202, 156),
-                        ),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => VoiceInput(),
-                            ),
-                          );
-                        },
-                        child: Text(
-                          'Video Input',
-                          style: TextStyle(color: Colors.white, fontSize: 20),
-                        ),
-                      ),
-                    ),
-                  ),
-                )
               ],
             )
           ],

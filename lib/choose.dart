@@ -7,7 +7,8 @@ class Eth_choose extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Page',
+      debugShowCheckedModeBanner: false,
+      title: 'Choose Sign Language',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),

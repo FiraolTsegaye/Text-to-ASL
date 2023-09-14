@@ -79,8 +79,8 @@ class _FilePickerPageState extends State<EthSL_FilePickerPage> {
               ),
               SizedBox(width: 8),
               Text(
-                ' EThSL File Picker',
-                style: TextStyle(color: Colors.white),
+                'EThSL File Picker',
+                style: const TextStyle(color: Colors.white),
               ),
             ],
           ),
@@ -99,7 +99,10 @@ class _FilePickerPageState extends State<EthSL_FilePickerPage> {
                     onPressed: () {
                       pickFile(FileContent);
                     },
-                    child: Text('Pick File'),
+                    child: Text(
+                      'EthSL: Pick File',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
           ),
           if (pickedFile != null)

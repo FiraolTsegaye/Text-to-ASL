@@ -108,7 +108,7 @@ class _VoiceInputState extends State<VoiceInput> {
               ),
               SizedBox(width: 8),
               Text(
-                'Voice Input',
+                'ASL: Voice Input',
                 style: TextStyle(color: Colors.white),
               ),
             ],

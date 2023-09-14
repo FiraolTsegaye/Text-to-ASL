@@ -49,7 +49,7 @@ class Eth_start extends StatelessWidget {
 }
 
 class Eth_SecondStart extends StatelessWidget {
-  const Eth_SecondStart({super.key});
+  const Eth_SecondStart({Key? key});
 
   @override
   Widget build(BuildContext context) {
@@ -97,65 +97,58 @@ class Eth_SecondStart extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Row(
-              children: [
-                Container(
-                  height: 160,
-                  width: 160,
-                  child: ClipRRect(
-                      borderRadius: BorderRadius.circular(15),
-                      child: Container(
-                        //decoration:
-                        // BoxDecoration(borderRadius: BorderRadius.circular(20)),
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Color.fromARGB(248, 18, 202, 156),
-                          ),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => Text_ASL_amh()),
-                            );
-                          },
-                          child: const Text(
-                            'Input Text',
-                            style: TextStyle(color: Colors.white, fontSize: 20),
-                          ),
-                        ),
-                      )),
-                ),
-                const SizedBox(width: 20),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Row(
+              mainAxisAlignment:
+                  MainAxisAlignment.center, // Align buttons horizontally
               children: [
                 Container(
                   height: 160,
                   width: 160,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(15),
-                    child: Container(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor: Color.fromARGB(248, 18, 202, 156)),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => EthSL_FilePickerPage()),
-                          );
-                        },
-                        child: Text(
-                          'Upload',
-                          style: TextStyle(color: Colors.white, fontSize: 20),
-                        ),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color.fromARGB(248, 18, 202, 156),
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => Text_ASL_amh()),
+                        );
+                      },
+                      child: const Text(
+                        'Input Text',
+                        style: TextStyle(color: Colors.white, fontSize: 20),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 20),
+                Container(
+                  height: 160,
+                  width: 160,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(15),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color.fromARGB(248, 18, 202, 156),
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => EthSL_FilePickerPage()),
+                        );
+                      },
+                      child: const Text(
+                        'Upload',
+                        style: TextStyle(color: Colors.white, fontSize: 20),
                       ),
                     ),
                   ),
                 ),
               ],
-            )
+            ),
           ],
         ),
       ),

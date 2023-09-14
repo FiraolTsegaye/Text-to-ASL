@@ -79,8 +79,8 @@ class _FilePickerPageState extends State<FilePickerPage> {
               ),
               SizedBox(width: 8),
               Text(
-                'File Picker',
-                style: TextStyle(color: Colors.white),
+                'ASL: File Picker',
+                style: const TextStyle(color: Colors.white),
               ),
             ],
           ),
@@ -99,7 +99,8 @@ class _FilePickerPageState extends State<FilePickerPage> {
                     onPressed: () {
                       pickFile(FileContent);
                     },
-                    child: Text('Pick File'),
+                    child: Text('Pick File',
+                        style: TextStyle(fontSize: 20.0, color: Colors.white)),
                   ),
           ),
           if (pickedFile != null)

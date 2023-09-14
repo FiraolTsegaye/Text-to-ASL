@@ -74,7 +74,7 @@ class _Text_ASLState extends State<Text__SASL> {
               ),
               SizedBox(width: 8),
               Text(
-                'Input Text',
+                'ASL: text input',
                 style: TextStyle(color: Colors.white),
               ),
             ],

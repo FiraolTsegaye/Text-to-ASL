@@ -74,7 +74,7 @@ class _Text_ASLState extends State<Text_ASL_amh> {
               ),
               SizedBox(width: 8),
               Text(
-                'Input Text',
+                'EthSL: text input',
                 style: TextStyle(color: Colors.white),
               ),
             ],

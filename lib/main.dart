@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
-import 'HomePage.dart';
+import 'package:first/HomePage.dart';
 import 'intro.dart';
+import 'package:first/EthSL_text.dart';
+import 'package:first/Eth_file_picker.dart';
+import 'package:first/Start2.dart';
+import 'package:first/Start.dart';
 // import 'profile.dart';
 
 void main() => runApp(MyApp());

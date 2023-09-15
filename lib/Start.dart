@@ -36,7 +36,7 @@ class SecondStart extends StatelessWidget {
                 ),
                 SizedBox(width: 8),
                 Text(
-                  'Commusign',
+                  'ASL',
                   style: TextStyle(color: Colors.white),
                 ),
               ],
@@ -83,7 +83,7 @@ class SecStart extends StatelessWidget {
                 ),
                 SizedBox(width: 8),
                 Text(
-                  'Commusign',
+                  'ASL',
                   style: TextStyle(color: Colors.white),
                 ),
               ],

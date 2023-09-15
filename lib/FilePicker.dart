@@ -109,7 +109,7 @@ class _FilePickerPageState extends State<FilePickerPage> {
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
             child: Text(
-              '*Please note that for optimal usage of this app, the uploaded file must be written in Amharic and in text file format.',
+              '*Please note that for optimal usage of this app, the uploaded file must be written in English and in text file format.',
               style: TextStyle(color: Colors.white, fontSize: 13),
             ),
           ),

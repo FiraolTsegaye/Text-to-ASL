@@ -30,7 +30,7 @@ class _Text_ASLState extends State<Text__SASL> {
   }
 
   void _submitForm() {
-    String input = _textEditingController.text.trim();
+    String input = _textEditingController.text.trim().toLowerCase();
     if (input.isNotEmpty) {
       List<String> inputWords = input.split(' ');
       setState(() {

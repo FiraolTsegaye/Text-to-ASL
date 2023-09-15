@@ -20,7 +20,7 @@ class _introPageState extends State<introPage> {
               //backgroundColor: Colors.black,
               //text: Text('Commusign')
               Image.asset(
-            'images/Group 14.png',
+            'images/Group14.png',
           ),
           nextScreen: HomePage(),
           splashTransition: SplashTransition.scaleTransition,

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-
 class Text__SASL extends StatefulWidget {
   @override
   _Text_ASLState createState() => _Text_ASLState();
@@ -9,6 +8,7 @@ class Text__SASL extends StatefulWidget {
 class _Text_ASLState extends State<Text__SASL> {
   final TextEditingController _textEditingController = TextEditingController();
   List<String> words = [];
+  List<String> missingWords = [];
   bool displayBoxVisible = false;
   bool showClearIcon = false;
 
@@ -34,11 +34,58 @@ class _Text_ASLState extends State<Text__SASL> {
     String input = _textEditingController.text.trim().toLowerCase();
     if (input.isNotEmpty) {
       List<String> inputWords = input.split(' ');
+      List<String> missing = [];
+      for (String word in inputWords) {
+        if (!checkIfGifExists(word)) {
+          missing.add(word);
+        }
+      }
       setState(() {
         words.addAll(inputWords);
+        missingWords = missing;
         displayBoxVisible = true;
+        if (missingWords.isNotEmpty) {
+          _showErrorDialog(context);
+        }
       });
     }
+  }
+
+  bool checkIfGifExists(String word) {
+    return gifExistsInDatabase(word);
+  }
+
+  bool gifExistsInDatabase(String word) {
+    List<String> availableWords = ['any', 'anything', 'cool', 'cold'];
+    return availableWords.contains(word);
+  }
+
+  void _showErrorDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('error'),
+          content: Text(
+            'The following words are not included in our dictionary:\n${missingWords.join(", ")}',
+          ),
+          actions: <TextButton>[
+            TextButton(
+              child: Text('clear'),
+              onPressed: () {
+                setState(() {
+                  words.clear();
+                  missingWords.clear();
+                  displayBoxVisible = false;
+                });
+                _textEditingController.clear();
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _clearForm() {
@@ -152,6 +199,14 @@ class _Text_ASLState extends State<Text__SASL> {
                           child: Text('Clear display'),
                         ),
                       ),
+                      // if (missingWords.isNotEmpty)
+                      // ElevatedButton(
+                      //     onPressed: () => _showErrorDialog(context),
+                      //     child: Text(
+                      //       'view Error',
+                      //       style:
+                      //           TextStyle(color: Colors.white, fontSize: 13),
+                      //     ))
                     ],
                   ),
                 SizedBox(height: 16.0),

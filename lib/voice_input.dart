@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
-import 'package:flutter/services.dart' show rootBundle;
+
+void main() {
+  runApp(MyApp());
+}
 
 class MyApp extends StatelessWidget {
   @override
@@ -29,16 +32,7 @@ class _VoiceInputState extends State<VoiceInput> {
   @override
   void initState() {
     super.initState();
-    _initializeSpeechToText();
-  }
-
-  Future<void> _initializeSpeechToText() async {
     _speechToText = stt.SpeechToText();
-    await _speechToText.initialize();
-    if (!_speechToText.isAvailable) {
-      print('Speech recognition is not available');
-    }
-    setState(() {});
   }
 
   void _startListening() {
@@ -48,6 +42,9 @@ class _VoiceInputState extends State<VoiceInput> {
           _transcription = result.recognizedWords.toLowerCase();
         });
       },
+      listenFor: Duration(minutes: 1),
+      pauseFor: Duration(seconds: 5),
+      partialResults: true,
     );
     setState(() {
       _isListening = true;
@@ -61,107 +58,39 @@ class _VoiceInputState extends State<VoiceInput> {
     });
   }
 
-  Future<Widget> _loadImage(String imagePath) async {
-    final data = await rootBundle.load(imagePath);
-    final bytes = data.buffer.asUint8List();
-    return Image.memory(
-      bytes,
-      width: 200.0,
-      height: 200.0,
-      gaplessPlayback: true,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    if (_speechToText == null) {
-      return Scaffold(
-        backgroundColor: Colors.black,
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-
-    String imagePath = 'images/${_transcription}.gif';
-
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        leading: IconButton(
-          icon: Image.asset(
-            'images/Vectorback.png',
-            width: 10,
-          ),
-          onPressed: () {
-            Navigator.pop(context); // Navigates to the previous page
-          },
-        ),
-        title: Container(
-          width: 200.0,
-          child: Row(
-            children: [
-              Image.asset(
-                'images/Icon1.png',
-                width: 30,
-                height: 30,
-              ),
-              SizedBox(width: 8),
-              Text(
-                'ASL: Voice Input',
-                style: TextStyle(color: Colors.white),
-              ),
-            ],
-          ),
-        ),
+        title: Text('Voice Input'),
       ),
-      backgroundColor: Colors.black,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            GestureDetector(
-              onTap: _isListening ? _stopListening : _startListening,
-              child: Icon(
-                _isListening ? Icons.mic : Icons.mic_none,
-                size: 48.0,
-                color: _isListening ? Colors.red : Colors.blue,
-              ),
+            IconButton(
+              icon: Icon(_isListening ? Icons.mic : Icons.mic_none),
+              onPressed: () {
+                if (_isListening) {
+                  _stopListening();
+                } else {
+                  _startListening();
+                }
+              },
             ),
-            Container(
-              padding: EdgeInsets.all(16.0),
-              child: Text(
-                _isListening ? 'Listening...' : 'Not Listening',
-                style: TextStyle(fontSize: 18.0, color: Colors.white),
-              ),
+            SizedBox(height: 16),
+            Text(
+              _isListening ? 'Listening...' : 'Not Listening',
+              style: TextStyle(fontSize: 24),
             ),
-            Container(
-              padding: EdgeInsets.all(16.0),
-              child: Text(
-                _transcription,
-                style: TextStyle(fontSize: 18.0, color: Colors.white),
-              ),
+            SizedBox(height: 16),
+            Text(
+              _transcription,
+              style: TextStyle(fontSize: 24),
             ),
-            if (_transcription.isNotEmpty)
-              FutureBuilder<Widget>(
-                future: _loadImage(imagePath),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return CircularProgressIndicator();
-                  }
-                  if (snapshot.hasError) {
-                    return Text('Error loading image');
-                  }
-                  return snapshot.data ?? SizedBox.shrink();
-                },
-              ),
           ],
         ),
       ),
     );
   }
 }
-
-// void main() {
-//   runApp(MyApp());
-// }

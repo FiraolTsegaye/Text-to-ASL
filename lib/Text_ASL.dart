@@ -35,18 +35,22 @@ class _Text_ASLState extends State<Text__SASL> {
     if (input.isNotEmpty) {
       List<String> inputWords = input.split(' ');
       List<String> missing = [];
+      List<String> existing_words = [];
       for (String word in inputWords) {
         if (!checkIfGifExists(word)) {
           missing.add(word);
+          //inputWords.remove(word);
+        } else {
+          existing_words.add(word);
         }
       }
-      
+
       setState(() {
-        words.addAll(inputWords);
+        words.addAll(existing_words);
         missingWords = missing;
         displayBoxVisible = true;
         if (missingWords.isNotEmpty) {
-         // displayBoxVisible = false;
+          // displayBoxVisible = false;
           _showErrorDialog(context);
         }
       });
@@ -58,37 +62,122 @@ class _Text_ASLState extends State<Text__SASL> {
   }
 
   bool gifExistsInDatabase(String word) {
-    List<String> availableWords = ['any', 'anything', 'cool', 'cold', 'all', 'annually' , 'blizzard' , 'april'];
+    List<String> availableWords = [
+      'a',
+      'any',
+      'anything',
+      'cool',
+      'cold',
+      'all',
+      'annually',
+      'april',
+      'blizzard',
+      'b',
+      'blackice',
+      'breezy',
+      'brisk',
+      'c',
+      'clearskies',
+      'cloudy',
+      'cold',
+      'd',
+      'daily',
+      'dawn',
+      'december',
+      'degrees',
+      'e',
+      'each',
+      'ear',
+      'early',
+      'either',
+      'every',
+      'everywednesday',
+      'f',
+      'few',
+      'friday',
+      'g',
+      'h',
+      'hail',
+      'heavyrain',
+      'her',
+      'herself',
+      'hot',
+      'him',
+      'himself',
+      'hot',
+      'hour',
+      'humid',
+      'i',
+      'ice',
+      'it',
+      'itself',
+      'j',
+      'january',
+      'july',
+      'k',
+      'l',
+      'late',
+      'latenight',
+      'm',
+      'many',
+      'march',
+      'me',
+      'my',
+      'n',
+      'night',
+      'none',
+      'nothing',
+      'o',
+      'our',
+      'p',
+      'q',
+      'r',
+      's',
+      'second',
+      'sleep',
+      'slippery',
+      'some',
+      'somebody',
+      'someone',
+      'something',
+      'soon',
+      'summer',
+      'sun',
+      'sunday',
+      'sunrise',
+      't',
+      'u',
+      'v',
+      'w',
+      'which',
+      'x',
+      'y',
+      'z'
+    ];
     return availableWords.contains(word);
   }
 
   void _showErrorDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('error'),
-          content: Text(
-            'The following words are not included in our dictionary:\n${missingWords.join(", ")}',
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text('Error'),
+        content: Text(
+          'The following words are not included in our dictionary:\n${missingWords.join(", ")}',
+        ),
+        actions: <TextButton>[
+          TextButton(
+            child: Text('Clear'),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
           ),
-          actions: <TextButton>[
-            TextButton(
-              child: Text('clear'),
-              onPressed: () {
-                setState(() {
-                  words.clear();
-                  missingWords.clear();
-                  displayBoxVisible = false;
-                });
-                _textEditingController.clear();
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
+        ],
+      );
+    },
+  );
+}
 
   void _clearForm() {
     setState(() {
@@ -132,8 +221,8 @@ class _Text_ASLState extends State<Text__SASL> {
         ),
       ),
       body: Container(
-        constraints: BoxConstraints.expand(),
-        decoration: BoxDecoration(
+        constraints: const BoxConstraints.expand(),
+        decoration: const BoxDecoration(
           image: DecorationImage(
             image: AssetImage('images/ASL.jpeg'),
             fit: BoxFit.cover,
@@ -163,7 +252,7 @@ class _Text_ASLState extends State<Text__SASL> {
         ),
         child: SingleChildScrollView(
           child: Padding(
-            padding: EdgeInsets.all(20.0),
+            padding: const EdgeInsets.all(20.0),
             child: Column(
               children: [
                 if (displayBoxVisible)
@@ -171,8 +260,9 @@ class _Text_ASLState extends State<Text__SASL> {
                     children: [
                       GridView.builder(
                         shrinkWrap: true,
-                        physics: NeverScrollableScrollPhysics(),
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
                           crossAxisSpacing: 10.0,
                           mainAxisSpacing: 10.0,
@@ -187,7 +277,7 @@ class _Text_ASLState extends State<Text__SASL> {
                           );
                         },
                       ),
-                      SizedBox(height: 16.0),
+                      const SizedBox(height: 16.0),
                       Container(
                         child: ElevatedButton(
                           onPressed: _clearForm,

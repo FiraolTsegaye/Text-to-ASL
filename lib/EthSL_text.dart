@@ -8,6 +8,7 @@ class Text_ASL_amh extends StatefulWidget {
 class _Text_ASLState extends State<Text_ASL_amh> {
   final TextEditingController _textEditingController = TextEditingController();
   List<String> words = [];
+  List<String> missingWords = [];
   bool displayBoxVisible = false;
   bool showClearIcon = false;
 
@@ -30,14 +31,69 @@ class _Text_ASLState extends State<Text_ASL_amh> {
   }
 
   void _submitForm() {
-    String input = _textEditingController.text.trim();
+    String input = _textEditingController.text.trim().toLowerCase();
     if (input.isNotEmpty) {
       List<String> inputWords = input.split(' ');
+      List<String> missing = [];
+      List<String> existing_words = [];
+      for (String word in inputWords) {
+        if (!checkIfGifExists(word)) {
+          missing.add(word);
+          //inputWords.remove(word);
+        } else {
+          existing_words.add(word);
+        }
+      }
+
       setState(() {
-        words.addAll(inputWords);
+        words.addAll(existing_words);
+        missingWords = missing;
         displayBoxVisible = true;
+        if (missingWords.isNotEmpty) {
+          // displayBoxVisible = false;
+          _showErrorDialog(context);
+        }
       });
     }
+  }
+
+  bool checkIfGifExists(String word) {
+    return gifExistsInDatabase(word);
+  }
+
+  bool gifExistsInDatabase(String word) {
+    List<String> availableWords = [
+      'መስማትየተሳናቸው',
+      'ሴትልጅ',
+      'ቀን',
+      'ታህሳስ',
+      'አደገኛ',
+      'ዳንስ',
+      'ጉዳት'
+    ];
+    return availableWords.contains(word);
+  }
+
+  void _showErrorDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Error'),
+          content: Text(
+            'The following words are not included in our dictionary:\n${missingWords.join(", ")}',
+          ),
+          actions: <TextButton>[
+            TextButton(
+              child: Text('Clear'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _clearForm() {
@@ -82,8 +138,8 @@ class _Text_ASLState extends State<Text_ASL_amh> {
         ),
       ),
       body: Container(
-        constraints: BoxConstraints.expand(),
-        decoration: BoxDecoration(
+        constraints: const BoxConstraints.expand(),
+        decoration: const BoxDecoration(
           image: DecorationImage(
             image: AssetImage('images/ASL.jpeg'),
             fit: BoxFit.cover,
@@ -113,7 +169,7 @@ class _Text_ASLState extends State<Text_ASL_amh> {
         ),
         child: SingleChildScrollView(
           child: Padding(
-            padding: EdgeInsets.all(20.0),
+            padding: const EdgeInsets.all(20.0),
             child: Column(
               children: [
                 if (displayBoxVisible)
@@ -121,8 +177,9 @@ class _Text_ASLState extends State<Text_ASL_amh> {
                     children: [
                       GridView.builder(
                         shrinkWrap: true,
-                        physics: NeverScrollableScrollPhysics(),
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
                           crossAxisSpacing: 10.0,
                           mainAxisSpacing: 10.0,
@@ -137,7 +194,7 @@ class _Text_ASLState extends State<Text_ASL_amh> {
                           );
                         },
                       ),
-                      SizedBox(height: 16.0),
+                      const SizedBox(height: 16.0),
                       Container(
                         child: ElevatedButton(
                           onPressed: _clearForm,
@@ -151,6 +208,14 @@ class _Text_ASLState extends State<Text_ASL_amh> {
                           child: Text('Clear display'),
                         ),
                       ),
+                      // if (missingWords.isNotEmpty)
+                      // ElevatedButton(
+                      //     onPressed: () => _showErrorDialog(context),
+                      //     child: Text(
+                      //       'view Error',
+                      //       style:
+                      //           TextStyle(color: Colors.white, fontSize: 13),
+                      //     ))
                     ],
                   ),
                 SizedBox(height: 16.0),

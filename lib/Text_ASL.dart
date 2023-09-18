@@ -40,11 +40,13 @@ class _Text_ASLState extends State<Text__SASL> {
           missing.add(word);
         }
       }
+      
       setState(() {
         words.addAll(inputWords);
         missingWords = missing;
         displayBoxVisible = true;
         if (missingWords.isNotEmpty) {
+         // displayBoxVisible = false;
           _showErrorDialog(context);
         }
       });
@@ -56,7 +58,7 @@ class _Text_ASLState extends State<Text__SASL> {
   }
 
   bool gifExistsInDatabase(String word) {
-    List<String> availableWords = ['any', 'anything', 'cool', 'cold'];
+    List<String> availableWords = ['any', 'anything', 'cool', 'cold', 'all', 'annually' , 'blizzard' , 'april'];
     return availableWords.contains(word);
   }
 

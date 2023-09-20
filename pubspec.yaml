@@ -37,6 +37,7 @@ dependencies:
   
   cupertino_icons: ^1.0.2
 
+  
   http: ^0.13.6 
   flutter_lints: ^2.0.0
   path_provider: ^2.0.15
@@ -49,6 +50,7 @@ dependencies:
   audioplayers: ^5.1.0
   just_audio: ^0.9.34
   flutter_launcher_icons: ^0.13.1
+  
   
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

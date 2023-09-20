@@ -2,7 +2,7 @@ import 'package:first/FilePicker.dart';
 import 'package:first/Text_ASL.dart';
 import 'package:first/voice_input.dart';
 import 'package:flutter/material.dart';
-import 'package:first/audio.dart';
+
 
 class SecondStart extends StatelessWidget {
   @override
@@ -180,31 +180,6 @@ class SecStart extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 20),
-                Container(
-                    height: 160,
-                    width: 160,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(15),
-                      child: Container(
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                              backgroundColor:
-                                  Color.fromARGB(248, 18, 202, 156)),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => AudioPage()),
-                            );
-                          },
-                          child: Text(
-                            'Upload Audio',
-                            style: TextStyle(color: Colors.white, fontSize: 20),
-                          ),
-                        ),
-                      ),
-                    ))
               ],
             ),
           ],

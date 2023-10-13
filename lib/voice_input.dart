@@ -123,10 +123,13 @@ class _VoiceInputState extends State<VoiceInput> {
             children: [
               GestureDetector(
                 onTap: _isListening ? _stopListening : _startListening,
-                child: Icon(
-                  _isListening ? Icons.mic : Icons.mic_none,
-                  size: 48.0,
-                  color: _isListening ? Colors.red : Colors.blue,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(8.0, 220, 8, 5),
+                  child: Icon(
+                    _isListening ? Icons.mic : Icons.mic_none,
+                    size: 48.0,
+                    color: _isListening ? Colors.red : Colors.blue,
+                  ),
                 ),
               ),
               Container(

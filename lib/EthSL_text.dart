@@ -69,7 +69,13 @@ class _Text_ASLState extends State<Text_ASL_amh> {
       'ታህሳስ',
       'አደገኛ',
       'ዳንስ',
-      'ጉዳት'
+      'ጉዳት',
+      'መኪና',
+      'መያዝ',
+      'ምንጣፍ',
+      'እንክብካቤ',
+      'ከረሜላ',
+      'ካሮት'
     ];
     return availableWords.contains(word);
   }
@@ -81,7 +87,7 @@ class _Text_ASLState extends State<Text_ASL_amh> {
         return AlertDialog(
           title: Text('Error'),
           content: Text(
-            'The following words are not included in our dictionary:\n${missingWords.join(", ")}',
+            'The following word(s) are not included in our dictionary:\n${missingWords.join(", ")}',
           ),
           actions: <TextButton>[
             TextButton(

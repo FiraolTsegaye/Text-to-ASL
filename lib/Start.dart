@@ -3,6 +3,7 @@ import 'package:first/Text_ASL.dart';
 import 'package:first/voice_input.dart';
 import 'package:flutter/material.dart';
 
+
 class SecondStart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -180,7 +181,7 @@ class SecStart extends StatelessWidget {
                   ),
                 ),
               ],
-            )
+            ),
           ],
         ),
       ),

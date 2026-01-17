@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASL Avatar Studio</title>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+                "tween": "https://unpkg.com/@tweenjs/tween.js@23.1.1/dist/tween.esm.js"
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #18ca9c;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #cbd5e1;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        #ui-layer {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            z-index: 100;
+            width: 90%;
+            max-width: 700px;
+        }
+
+        .mic-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid var(--primary);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: var(--primary);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .mic-btn:hover {
+            transform: scale(1.05);
+            background: var(--primary);
+            color: white;
+        }
+
+        .mic-btn.listening {
+            animation: pulse 1.5s infinite;
+            background: var(--primary);
+            color: white;
+        }
+
+        .mic-btn svg {
+            width: 30px;
+            height: 30px;
+            fill: currentColor;
+        }
+
+        .input-box {
+            flex-grow: 1;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 30px;
+            padding: 5px 25px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            height: 50px;
+        }
+
+        input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: #1e293b;
+            font-size: 1.1rem;
+            outline: none;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .send-btn {
+            background: transparent;
+            border: none;
+            color: var(--primary);
+            font-weight: 700;
+            cursor: pointer;
+            padding: 10px;
+            font-size: 1rem;
+            letter-spacing: 1px;
+            transition: color 0.2s;
+        }
+
+        .send-btn:hover {
+            color: #15a07c;
+        }
+
+        #word-display {
+            position: absolute;
+            top: 8%;
+            width: 100%;
+            text-align: center;
+            font-size: 4rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            color: #1e293b;
+            text-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            pointer-events: none;
+            letter-spacing: 5px;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(24, 202, 156, 0.6);
+            }
+
+            70% {
+                box-shadow: 0 0 0 25px rgba(24, 202, 156, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(24, 202, 156, 0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="word-display">READY</div>
+    <div id="ui-layer">
+        <button class="mic-btn" id="micBtn" title="Speak"><svg viewBox="0 0 24 24">
+                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
+                <path
+                    d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+            </svg></button>
+        <div class="input-box"><input type="text" id="inputText" placeholder="Type text or use Terminal..."
+                autocomplete="off"><button class="send-btn" id="sendBtn">SIGN</button></div>
+    </div>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import TWEEN from 'tween';
+
+        const scene = new THREE.Scene(); scene.background = new THREE.Color(0xcbd5e1); scene.fog = new THREE.Fog(0xcbd5e1, 3, 15);
+        const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000); camera.position.set(0, 1.35, 2.0);
+        const renderer = new THREE.WebGLRenderer({ antialias: true }); renderer.setSize(window.innerWidth, window.innerHeight); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; document.body.appendChild(renderer.domElement);
+        const controls = new OrbitControls(camera, renderer.domElement); controls.target.set(0, 1.3, 0); controls.enablePan = false; controls.update();
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+        const keyL = new THREE.DirectionalLight(0xffffff, 0.9); keyL.position.set(1.5, 5, 3); keyL.castShadow = true; scene.add(keyL);
+        const rimL = new THREE.SpotLight(0xaaccff, 2); rimL.position.set(-2, 3, -3); scene.add(rimL);
+
+        const planeMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 1 });
+        const bg = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), planeMat); bg.position.z = -3; bg.receiveShadow = true; scene.add(bg);
+        const fl = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), planeMat); fl.rotation.x = -Math.PI / 2; fl.receiveShadow = true; scene.add(fl);
+
+        const skinMat = new THREE.MeshStandardMaterial({ color: 0xe0ac69, roughness: 0.5 }); const suitMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 }); const shirtMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 }); const hairMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.9 }); const lipMat = new THREE.MeshStandardMaterial({ color: 0xc08080, roughness: 0.5 });
+        const avatar = new THREE.Group(); scene.add(avatar);
+
+        const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.22, 0.7, 12), suitMat); torso.position.y = 1.05; torso.castShadow = true; avatar.add(torso);
+        const lLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.08, 0.9), suitMat); lLeg.position.set(-0.12, 0.3, 0); avatar.add(lLeg);
+        const rLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.08, 0.9), suitMat); rLeg.position.set(0.12, 0.3, 0); avatar.add(rLeg);
+        const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.12, 0.1, 8), shirtMat); collar.position.y = 1.4; avatar.add(collar);
+        const tie = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.45, 4), new THREE.MeshStandardMaterial({ color: 0x991b1b })); tie.position.set(0, 1.25, 0.14); tie.scale.z = 0.5; tie.rotation.y = Math.PI / 4; avatar.add(tie);
+
+        const headGroup = new THREE.Group(); headGroup.position.y = 1.55; avatar.add(headGroup);
+        headGroup.add(new THREE.Mesh(new THREE.SphereGeometry(0.18, 32, 32, 0, 6.3, 0, 1.8), skinMat));
+        const jawGroup = new THREE.Group(); jawGroup.position.y = 0.03; headGroup.add(jawGroup);
+        const jaw = new THREE.Mesh(new THREE.SphereGeometry(0.175, 32, 16, 0, 6.3, 1.8, 1.2), skinMat); jaw.scale.y = 1.3; jaw.position.y = -0.02; jawGroup.add(jaw);
+        const nose = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.09, 4), skinMat); nose.position.set(0, 0, 0.18); nose.rotation.set(-0.2, 0.78, 0); headGroup.add(nose);
+        const hair = new THREE.Mesh(new THREE.SphereGeometry(0.19, 32, 32, 0, 6.3, 0, 1.4), hairMat); hair.position.y = 0.04; hair.scale.set(1.05, 1.15, 1.1); headGroup.add(hair);
+
+        function eye(x) {
+            const g = new THREE.Group(); g.position.set(x, 0.03, 0.15);
+            g.add(new THREE.Mesh(new THREE.SphereGeometry(0.03, 16, 16), new THREE.MeshBasicMaterial({ color: 0xffffff })).scale.set(1, 1, 0.5));
+            g.add(new THREE.Mesh(new THREE.SphereGeometry(0.012), new THREE.MeshBasicMaterial({ color: 0x221100 })).translateX(0).translateY(0).translateZ(0.025));
+            return { g, l: new THREE.Mesh(new THREE.SphereGeometry(0.031, 16, 16, 0, 6.3, 0, 1.57), skinMat) };
+        }
+        const lEye = eye(-0.06); lEye.l.rotation.x = -1.57; lEye.g.add(lEye.l); headGroup.add(lEye.g);
+        const rEye = eye(0.06); rEye.l.rotation.x = -1.57; rEye.g.add(rEye.l); headGroup.add(rEye.g);
+
+        const mouthRig = new THREE.Group(); mouthRig.position.set(0, -0.11, 0.17); headGroup.add(mouthRig);
+        mouthRig.add(new THREE.Mesh(new THREE.TorusGeometry(0.025, 0.006, 4, 12, 3.14), lipMat).rotateZ(3.14));
+        const lLipGrp = new THREE.Group(); mouthRig.add(lLipGrp);
+        lLipGrp.add(new THREE.Mesh(new THREE.TorusGeometry(0.025, 0.007, 4, 12, 3.14), lipMat));
+
+        const VISEMES = { 'rest': { j: 0, w: 1, o: 0 }, 'a': { j: 0.2, w: 1, o: 0.04 }, 'o': { j: 0.2, w: 0.6, o: 0.1 }, 'm': { j: 0, w: 1.1, o: -0.01 }, 'e': { j: 0.05, w: 1.2, o: 0.02 } };
+        function setViseme(c, d = 150) { let v = VISEMES[c] || VISEMES['rest']; new TWEEN.Tween(jawGroup.rotation).to({ x: v.j }, d).start(); new TWEEN.Tween(mouthRig.scale).to({ x: v.w }, d).start(); new TWEEN.Tween(lLipGrp.position).to({ y: -v.o }, d).start(); }
+
+        // --- HANDS ---
+        const rSh = new THREE.Group(); rSh.position.set(0.32, 1.35, -0.05); avatar.add(rSh);
+        const rArm = new THREE.Group(); rSh.add(rArm);
+        const rElb = new THREE.Group(); rElb.position.y = -0.5; rArm.add(rElb);
+        const rWri = new THREE.Group(); rWri.position.y = -0.4; rElb.add(rWri);
+        const palm = new THREE.Group(); rWri.add(palm);
+
+        rArm.add(new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.07, 0.5), suitMat).translateY(-0.25));
+        rElb.add(new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.05, 0.4), suitMat).translateY(-0.2));
+        rWri.add(new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.1, 0.025), skinMat).translateY(-0.06));
+
+        // Fingers (With Spread Support)
+        const fings = {};
+        function mkF(n, x, l) {
+            const g = new THREE.Group(); g.position.set(x, -0.11, 0); palm.add(g);
+            const p1 = new THREE.Group(); g.add(p1);
+            p1.add(new THREE.Mesh(new THREE.BoxGeometry(0.018, l * 0.5, 0.018), skinMat).translateY(-l * 0.25));
+            const j = new THREE.Group(); j.position.y = -l * 0.5; p1.add(j);
+            j.add(new THREE.Mesh(new THREE.BoxGeometry(0.015, l * 0.5, 0.018), skinMat).translateY(-l * 0.25));
+            fings[n] = [p1, j, g]; // p1:Bend, j:TipBend, g:Spread
+        }
+        mkF('thumb', 0.05, 0.09); mkF('index', 0.04, 0.13); mkF('middle', 0.014, 0.14); mkF('ring', -0.014, 0.13); mkF('pinky', -0.04, 0.1);
+        fings['thumb'][2].position.set(0.05, -0.04, 0.02); fings['thumb'][2].rotation.z = -0.7; // Thumb root
+
+        // Arm Posture (Vertical, Hand fwd)
+        rSh.rotation.z = -0.15;
+        rArm.rotation.set(-0.6, 0, 0.4);
+        rElb.rotation.x = -2.2; rElb.rotation.y = 1.8;
+        rWri.rotation.set(0.2, 0, 3.14); rWri.rotation.x = 2.8;
+
+        // --- ASL DICTIONARY (Approximated) ---
+        // Format: [Bend1, Bend2, Spread]
+        // 0 = Straight, 1.6 = Full Curl. Spread: +/- radians
+        const POSES = {
+            'neutral': { t: [0, 0, -0.7], i: [0, 0, 0], m: [0, 0, 0], r: [0, 0, 0], p: [0, 0, 0] },
+            'a': { t: [0, 0, -0.7], i: [1.6, 1.6, 0], m: [1.6, 1.6, 0], r: [1.6, 1.6, 0], p: [1.6, 1.6, 0] }, // Fist, thumb side
+            'b': { t: [1.6, 0.5, -1.2], i: [0, 0, 0], m: [0, 0, 0], r: [0, 0, 0], p: [0, 0, 0] }, // Flat, thumb crossed
+            'c': { t: [0.5, 0.2, -0.4], i: [0.5, 0.5, 0], m: [0.5, 0.5, 0], r: [0.5, 0.5, 0], p: [0.5, 0.5, 0] }, // C Shape
+            'd': { t: [1.6, 0, -1.0], i: [0, 0, 0], m: [1.6, 1.6, 0], r: [1.6, 1.6, 0], p: [1.6, 1.6, 0] }, // Index up
+            'e': { t: [1.6, 1.0, -1.2], i: [1.7, 1.0, 0], m: [1.7, 1.0, 0], r: [1.7, 1.0, 0], p: [1.7, 1.0, 0] }, // Claw
+            'f': { t: [0.6, 0.3, -0.2], i: [0.6, 0.8, 0], m: [0, 0, 0.1], r: [0, 0, 0.2], p: [0, 0, 0.3] }, // OK sign
+            'g': { t: [0, 0, 0], i: [0, 0, 1.5], m: [1.6, 1.6, 0], r: [1.6, 1.6, 0], p: [1.6, 1.6, 0] }, // Point left? (Hard in current rig) -> Index fwd
+            'h': { t: [1.6, 0, 0], i: [0, 0, 0], m: [0, 0, 0], r: [1.6, 1.6, 0], p: [1.6, 1.6, 0] }, // Index/Mid out
+            'i': { t: [1.6, 1.0, -1.0], i: [1.6, 1.6, 0], m: [1.6, 1.6, 0], r: [1.6, 1.6, 0], p: [0, 0, 0] }, // Pinky up
+            'j': { t: [1.6, 1.0, -1.0], i: [1.6, 1.6, 0], m: [1.6, 1.6, 0], r: [1.6, 1.6, 0], p: [0, 0, 0] }, // Same as I (static for now)
+            'k': { t: [0, 0, -0.6], i: [0, 0, 0], m: [0, 0, 0], r: [1.6, 1.6, 0], p: [1.6, 1.6, 0] }, // Peace sign thumb mid?
+            'l': { t: [0, 0, -0.7], i: [0, 0, 0], m: [1.6, 1.6, 0], r: [1.6, 1.6, 0], p: [1.6, 1.6, 0] }, // L Shape
+            'm': { t: [1.6, 0, -1.4], i: [1.2, 1, 0], m: [1.2, 1, 0], r: [1.2, 1, 0], p: [1.6, 1.6, 0] }, // Thumb under 3
+            'n': { t: [1.6, 0, -1.4], i: [1.2, 1, 0], m: [1.2, 1, 0], r: [1.6, 1.6, 0], p: [1.6, 1.6, 0] }, // Thumb under 2
+            'o': { t: [0.8, 0.5, -0.2], i: [1.2, 0.8, 0], m: [1.2, 0.8, 0], r: [1.2, 0.8, 0], p: [1.2, 0.8, 0] }, // O Shape
+            'p': { t: [0, 0, -0.6], i: [0, 0, 0], m: [1.6, 0, 0], r: [1.6, 1.6, 0], p: [1.6, 1.6, 0] }, // K down
+            'q': { t: [0, 0, 0], i: [0.4, 0, 0], m: [1.6, 1.6, 0], r: [1.6, 1.6, 0], p: [1.6, 1.6, 0] }, // G down
+            'r': { t: [1.6, 0, -1.0], i: [0, 0, 0.2], m: [0, 0, -0.2], r: [1.6, 1.6, 0], p: [1.6, 1.6, 0] }, // Crossed
+            's': { t: [1.2, 0.5, -1.2], i: [1.6, 1.6, 0], m: [1.6, 1.6, 0], r: [1.6, 1.6, 0], p: [1.6, 1.6, 0] }, // Fist thumb front
+            't': { t: [1.0, 0, -1.1], i: [1.4, 1, 0], m: [1.6, 1.6, 0], r: [1.6, 1.6, 0], p: [1.6, 1.6, 0] }, // Thumb under index
+            'u': { t: [1.6, 0, -1.0], i: [0, 0, 0], m: [0, 0, 0], r: [1.6, 1.6, 0], p: [1.6, 1.6, 0] }, // U joined
+            'v': { t: [1.6, 0, -1.0], i: [0, 0, 0.2], m: [0, 0, -0.2], r: [1.6, 1.6, 0], p: [1.6, 1.6, 0] }, // V split
+            'w': { t: [1.6, 0, -1.0], i: [0, 0, 0.15], m: [0, 0, 0], r: [0, 0, -0.15], p: [1.6, 1.6, 0] }, // 3 fingers
+            'x': { t: [1.6, 0, -1.0], i: [1.0, 1.5, 0], m: [1.6, 1.6, 0], r: [1.6, 1.6, 0], p: [1.6, 1.6, 0] }, // Hook
+            'y': { t: [0, 0, -0.5], i: [1.6, 1.6, 0], m: [1.6, 1.6, 0], r: [1.6, 1.6, 0], p: [0, 0, 0.5] }, // Hang loose
+            'z': { t: [1.6, 0, -1.0], i: [0, 0, 0], m: [1.6, 1.6, 0], r: [1.6, 1.6, 0], p: [1.6, 1.6, 0] }, // Index Trace
+        };
+
+        function moveH(char, dur = 150) {
+            if (!POSES[char]) {
+                console.warn(`⚠ No pose defined for '${char}', using neutral`);
+            }
+            const p = POSES[char] || POSES['neutral'];
+            console.log(`moveH('${char}') - Duration: ${dur}ms - Pose:`, p);
+            
+            const m = { t: 'thumb', i: 'index', m: 'middle', r: 'ring', p: 'pinky' };
+            Object.keys(m).forEach(k => {
+                const fingerName = m[k];
+                const f = fings[fingerName];
+                
+                if (!f) {
+                    console.error(`❌ Finger '${fingerName}' (key '${k}') not found in fings`);
+                    return;
+                }
+                
+                if (!p[k]) {
+                    console.error(`❌ No pose values for finger '${k}' in pose for '${char}'`);
+                    return;
+                }
+                
+                console.log(`   ${k}: bend1=${p[k][0]}, bend2=${p[k][1]}, spread=${p[k][2]}`);
+                
+                // f[0]: Proximal Bend (X), f[1]: Distal Bend (X), f[2]: Spread (Z)
+                new TWEEN.Tween(f[0].rotation).to({ x: p[k][0] }, dur).start();
+                new TWEEN.Tween(f[1].rotation).to({ x: p[k][1] }, dur).start();
+                if (p[k][2] !== undefined) {
+                    let target = p[k][2];
+                    if (k === 't') target = -0.7 + p[k][2]; // Thumb Offset
+                    
+                    new TWEEN.Tween(f[2].rotation).to({ z: target }, dur).start();
+                }
+            });
+        }
+
+        const display = document.getElementById('word-display');
+        async function play(list) {
+            console.log('play() called with:', list);
+            for (let item of list) {
+                let w = item.replace('.gif', '').replace('/images/', '').toLowerCase();
+                console.log(`Processing word: '${w}'`);
+                for (let c of w) {
+                    if (!c.match(/[a-z]/)) {
+                        console.log(`Skipping non-letter: '${c}'`);
+                        continue;
+                    }
+                    console.log(`→ Signing letter: '${c}'`);
+                    display.innerText = c.toUpperCase();
+                    
+                    // Force animation for 't'
+                    if (c === 't') {
+                        console.warn('🎯 SPECIAL HANDLING FOR T');
+                        const tPose = POSES['t'];
+                        console.log('T pose values:', tPose);
+                    }
+                    
+                    try {
+                        moveH(c, 250);
+                        setViseme(c, 250);
+                    } catch (e) {
+                        console.error(`Error animating '${c}':`, e);
+                    }
+                    
+                    await new Promise(r => setTimeout(r, 700));
+                }
+                setViseme('rest', 300);
+                moveH('neutral', 300);
+                await new Promise(r => setTimeout(r, 400));
+            }
+            display.innerText = "READY";
+            console.log('play() finished');
+        }
+
+        async function go(txt) {
+            const r = await fetch('/translate', { method: 'POST', body: JSON.stringify({ text: txt }), headers: { 'Content-Type': 'application/json' } });
+            const d = await r.json(); play(d.paths);
+        }
+
+        function animate() { requestAnimationFrame(animate); TWEEN.update(); renderer.render(scene, camera); }
+        animate();
+        setInterval(() => { lEye.l.rotation.x = 0; rEye.l.rotation.x = 0; setTimeout(() => { lEye.l.rotation.x = -1.57; rEye.l.rotation.x = -1.57; }, 150); }, 4000);
+        setInterval(async () => { try { const r = await fetch('/poll'); const d = await r.json(); if (d.command) go(d.command); } catch (e) { } }, 500);
+
+        const inp = document.getElementById('inputText');
+        const sBtn = document.getElementById('sendBtn');
+        sBtn.onclick = () => { go(inp.value); inp.value = ''; };
+        inp.onkeydown = (e) => { if (e.key === 'Enter') { go(inp.value); inp.value = ''; } };
+
+        if ('webkitSpeechRecognition' in window) {
+            const rec = new webkitSpeechRecognition();
+            const btn = document.getElementById('micBtn');
+            btn.onclick = () => { rec.start(); btn.classList.add('listening') };
+            rec.onresult = e => { const t = e.results[0][0].transcript; btn.classList.remove('listening'); inp.value = t; go(t); };
+        }
+        window.onresize = () => { camera.aspect = window.innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, innerHeight); };
+    </script>
+</body>
+
+</html>

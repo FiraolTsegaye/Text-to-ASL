@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text to ASL Avatar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #18ca9c; /* Color from original app */
+            --bg-dark: #0f172a;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-dark);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+            background-image: radial-gradient(circle at 50% -20%, #1e293b, var(--bg-dark));
+        }
+
+        /* Ambient background glow */
+        .glow {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: var(--primary);
+            filter: blur(150px);
+            opacity: 0.15;
+            z-index: -1;
+            top: -100px;
+            border-radius: 50%;
+        }
+
+        header {
+            margin-top: 2rem;
+            text-align: center;
+            z-index: 10;
+        }
+
+        h1 {
+            font-weight: 600;
+            font-size: 2.5rem;
+            letter-spacing: -1px;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 800px;
+            margin-top: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        /* Display Area */
+        .avatar-display {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            height: 400px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .avatar-display img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: none;
+        }
+
+        .avatar-display img.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .placeholder-text {
+            color: rgba(255,255,255,0.3);
+            font-size: 1.2rem;
+        }
+
+        /* Controls Area */
+        .controls {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 1.5rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            position: relative;
+        }
+
+        .input-wrapper {
+            flex-grow: 1;
+            position: relative;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1rem;
+            padding-right: 3rem;
+            color: white;
+            font-family: inherit;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(24, 202, 156, 0.2);
+        }
+
+        button {
+            background: var(--primary);
+            color: #000;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, filter 0.2s;
+            font-family: inherit;
+        }
+
+        button:hover {
+            filter: brightness(1.1);
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .mic-btn {
+            background: transparent;
+            color: var(--primary);
+            padding: 0.5rem;
+            border: 1px solid var(--glass-border);
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mic-btn svg {
+            width: 24px;
+            height: 24px;
+            fill: currentColor;
+        }
+
+        .mic-btn.listening {
+            background: rgba(24, 202, 156, 0.2);
+            animation: pulse 1.5s infinite;
+        }
+
+        /* Word List */
+        .word-queue {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+            min-height: 30px;
+        }
+
+        .capsule {
+            background: rgba(255,255,255,0.1);
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.7);
+            border: 1px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .capsule.active {
+            background: var(--primary);
+            color: black;
+            font-weight: 600;
+            transform: scale(1.1);
+            box-shadow: 0 0 10px var(--primary);
+        }
+
+        .capsule.missing {
+            border-color: #ef4444;
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(24, 202, 156, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(24, 202, 156, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(24, 202, 156, 0); }
+        }
+        
+        /* Suggestions/Autocomplete */
+        .suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background: #1e293b;
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            margin-top: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+        
+        .suggestion-item {
+            padding: 10px 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .suggestion-item:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="glow"></div>
+
+    <header>
+        <h1>Text to ASL Avatar</h1>
+        <p style="color: #94a3b8;">Translate speech and text to Sign Language</p>
+    </header>
+
+    <div class="container">
+        <!-- Display -->
+        <div class="avatar-display" id="displayBox">
+            <span class="placeholder-text">Avatar waiting...</span>
+            <img id="avatarImage" src="" alt="ASL Sign">
+        </div>
+
+        <!-- Word Queue (visualizing what is being played) -->
+        <div class="word-queue" id="wordQueue"></div>
+
+        <!-- Inputs -->
+        <div class="controls">
+            <button class="mic-btn" id="micBtn" title="Speak">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                    <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                </svg>
+            </button>
+            
+            <div class="input-wrapper">
+                <input type="text" id="textInput" placeholder="Type words here..." autocomplete="off">
+                <div class="suggestions" id="suggestionsBox"></div>
+            </div>
+            
+            <button id="translateBtn">Translate</button>
+        </div>
+    </div>
+
+    <script>
+        const textInput = document.getElementById('textInput');
+        const translateBtn = document.getElementById('translateBtn');
+        const micBtn = document.getElementById('micBtn');
+        const displayBox = document.getElementById('displayBox');
+        const avatarImage = document.getElementById('avatarImage');
+        const wordQueue = document.getElementById('wordQueue');
+        const suggestionsBox = document.getElementById('suggestionsBox');
+        const placeholderText = document.querySelector('.placeholder-text');
+
+        let availableWords = [];
+
+        // Fetch available words on load
+        fetch('/words')
+            .then(r => r.json())
+            .then(data => {
+                availableWords = data.words;
+            });
+
+        // Autocomplete Logic
+        textInput.addEventListener('input', (e) => {
+            const val = e.target.value;
+            suggestionsBox.innerHTML = '';
+            
+            // Just simple logic: show suggestions for the *last* word being typed
+            const words = val.split(' ');
+            const currentWord = words[words.length - 1].toLowerCase();
+            
+            if (currentWord.length > 0) {
+                const matches = availableWords.filter(w => w.startsWith(currentWord)).slice(0, 5);
+                if (matches.length > 0) {
+                    suggestionsBox.style.display = 'block';
+                    matches.forEach(match => {
+                        const div = document.createElement('div');
+                        div.className = 'suggestion-item';
+                        div.textContent = match;
+                        div.onclick = () => {
+                            // Replace last word
+                            words[words.length - 1] = match;
+                            textInput.value = words.join(' ') + ' ';
+                            suggestionsBox.style.display = 'none';
+                            textInput.focus();
+                        };
+                        suggestionsBox.appendChild(div);
+                    });
+                } else {
+                    suggestionsBox.style.display = 'none';
+                }
+            } else {
+                suggestionsBox.style.display = 'none';
+            }
+        });
+
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.input-wrapper')) {
+                suggestionsBox.style.display = 'none';
+            }
+        });
+
+        // Translation Logic
+        translateBtn.onclick = async () => {
+            const text = textInput.value;
+            if(!text) return;
+
+            const res = await fetch('/translate', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({text})
+            });
+            const data = await res.json();
+            
+            playSequence(data);
+        };
+
+        function playSequence(data) {
+            // Render word queue
+            wordQueue.innerHTML = '';
+            placeholderText.style.display = 'none';
+            
+            // Combine found and missing in order? 
+            // The logic.py splits strictly. Let's just iterate the input words to preserve order if we can?
+            // Wait, the python logic returned separate lists. 
+            // Ideally it should return a list of objects [{word: 'hello', found: true, path: '...'}, ...].
+            // But checking logic.py, it returns arrays separately.
+            // However, logic.py iterates in order. `found` will depend on `input_words` order IF all are found.
+            // But if mixed, we lose order in the current `logic.py` return structure if we just concat.
+            // Actually `logic.py` logic: iterate input, if found -> add to found, if not -> add to missing.
+            // This destroys the sentence structure order if there are mixed found/missing words.
+            // I should have updated logic.py to return an ordered list.
+            // For now, let's just play the `found` paths.
+            
+            // VISUAL FIX: Let's show all valid words in the queue.
+            data.found.forEach(word => {
+                const span = document.createElement('span');
+                span.className = 'capsule';
+                span.textContent = word;
+                wordQueue.appendChild(span);
+            });
+            
+            // Play GIFs
+            let i = 0;
+            
+            function showNext() {
+                if (i >= data.paths.length) {
+                    // Reset after done?
+                    setTimeout(() => {
+                         avatarImage.classList.remove('active');
+                         document.querySelectorAll('.capsule').forEach(c => c.classList.remove('active'));
+                         // placeholderText.style.display = 'block';
+                    }, 2000);
+                    return;
+                }
+                
+                const path = data.paths[i];
+                avatarImage.src = path;
+                avatarImage.classList.add('active');
+                
+                // Highlight word
+                const capsules = document.querySelectorAll('.capsule');
+                if(capsules[i]) {
+                    document.querySelectorAll('.capsule').forEach(c => c.classList.remove('active'));
+                    capsules[i].classList.add('active');
+                }
+
+                i++;
+                // Default delay 2s per sign? 
+                setTimeout(showNext, 2500);
+            }
+            
+            if (data.paths.length > 0) {
+                showNext();
+            } else {
+                 placeholderText.style.display = 'block';
+                 placeholderText.textContent = "No valid signs found.";
+            }
+        }
+
+        // Audio Logic - Speech Recognition
+        console.log('Initializing speech recognition...');
+        console.log('window.SpeechRecognition:', window.SpeechRecognition);
+        console.log('window.webkitSpeechRecognition:', window.webkitSpeechRecognition);
+        
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition = null;
+        
+        if (SpeechRecognition) {
+            try {
+                recognition = new SpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = 'en-US';
+                console.log('✓ Speech Recognition object created successfully');
+
+                micBtn.onclick = () => {
+                    console.log('Mic button clicked');
+                    if (recognition) {
+                        recognition.abort(); // Stop any previous recording
+                        setTimeout(() => {
+                            recognition.start();
+                            micBtn.classList.add('listening');
+                            textInput.placeholder = 'Listening...';
+                            console.log('✓ Recognition.start() called');
+                        }, 100);
+                    }
+                };
+
+                recognition.onstart = () => {
+                    console.log('✓ onstart: Recognition started, listening...');
+                };
+
+                recognition.onresult = (event) => {
+                    console.log('✓ onresult fired. Results count:', event.results.length);
+                    console.log('Result:', event.results);
+                    
+                    if (event.results && event.results.length > 0) {
+                        const transcript = event.results[0][0].transcript;
+                        const confidence = event.results[0][0].confidence;
+                        console.log('Transcript:', transcript, 'Confidence:', confidence);
+                        textInput.value = transcript;
+                        micBtn.classList.remove('listening');
+                        textInput.placeholder = 'Type words here...';
+                        console.log('✓ Calling auto-translate...');
+                        setTimeout(() => translateBtn.click(), 300);
+                    } else {
+                        console.warn('No results in recognition event');
+                    }
+                };
+
+                recognition.onerror = (event) => {
+                    console.error('✗ Speech recognition error:', event.error);
+                    micBtn.classList.remove('listening');
+                    textInput.placeholder = 'Speak something...';
+                    
+                    let errorMsg = event.error;
+                    if (event.error === 'no-speech') {
+                        errorMsg = 'No speech detected. Try again!';
+                    } else if (event.error === 'network') {
+                        errorMsg = 'Network error. Check internet connection.';
+                    } else if (event.error === 'permission-denied') {
+                        errorMsg = 'Microphone permission denied. Allow access in browser settings.';
+                    }
+                    console.log('Error message:', errorMsg);
+                    alert('Mic Error: ' + errorMsg);
+                };
+                
+                recognition.onend = () => {
+                    console.log('✓ onend: Recognition ended');
+                    micBtn.classList.remove('listening');
+                    if (textInput.placeholder === 'Listening...') {
+                        textInput.placeholder = 'Type words here...';
+                    }
+                };
+                
+                console.log('✓✓✓ Speech Recognition fully configured and ready');
+            } catch (e) {
+                console.error('Error initializing SpeechRecognition:', e);
+                micBtn.style.display = 'none';
+            }
+        } else {
+            console.error('✗ SpeechRecognition not available in this browser');
+            micBtn.style.display = 'none';
+            micBtn.title = 'Speech Recognition not supported';
+        }
+        
+    </script>
+</body>
+</html>

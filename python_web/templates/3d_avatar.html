@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ASL Avatar Studio - Enhanced</title>
+  <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+                "tween": "https://unpkg.com/@tweenjs/tween.js@23.1.1/dist/tween.esm.js"
+            }
+        }
+    </script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #18ca9c;
+      --accent: #6366f1;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: 'Outfit', sans-serif;
+    }
+
+    #ui-layer {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      z-index: 100;
+      width: 90%;
+      max-width: 700px;
+    }
+
+    .mic-btn {
+      background: rgba(255, 255, 255, 0.95);
+      border: 2px solid var(--primary);
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      color: var(--primary);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
+
+    .mic-btn:hover {
+      transform: scale(1.1);
+      background: var(--primary);
+      color: white;
+    }
+
+    .mic-btn.listening {
+      animation: pulse 1.5s infinite;
+      background: var(--primary);
+      color: white;
+    }
+
+    .mic-btn svg {
+      width: 28px;
+      height: 28px;
+      fill: currentColor;
+    }
+
+    .input-box {
+      flex-grow: 1;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border: none;
+      border-radius: 30px;
+      padding: 5px 25px;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      height: 56px;
+    }
+
+    input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      color: #1e293b;
+      font-size: 1.1rem;
+      outline: none;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .send-btn {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      border: none;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 12px 24px;
+      font-size: 0.95rem;
+      letter-spacing: 1px;
+      border-radius: 20px;
+      transition: all 0.3s;
+    }
+
+    .send-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 15px rgba(24, 202, 156, 0.4);
+    }
+
+    #word-display {
+      position: absolute;
+      top: 6%;
+      width: 100%;
+      text-align: center;
+      font-size: 3.5rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: white;
+      text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      pointer-events: none;
+      letter-spacing: 8px;
+    }
+
+    #camera-controls {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 100;
+    }
+
+    .cam-btn {
+      background: rgba(255, 255, 255, 0.9);
+      border: none;
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .cam-btn:hover {
+      background: var(--primary);
+      color: white;
+      transform: translateX(-3px);
+    }
+
+    .cam-btn.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(24, 202, 156, 0.6);
+      }
+
+      70% {
+        box-shadow: 0 0 0 25px rgba(24, 202, 156, 0);
+      }
+
+      100% {
+        box-shadow: 0 0 0 0 rgba(24, 202, 156, 0);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="word-display">READY</div>
+
+  <!-- Camera Control Buttons -->
+  <div id="camera-controls">
+    <button class="cam-btn active" data-cam="default">Default</button>
+    <button class="cam-btn" data-cam="hand">Hand Close-up</button>
+    <button class="cam-btn" data-cam="face">Face</button>
+    <button class="cam-btn" data-cam="full">Full Body</button>
+    <button class="cam-btn" data-cam="side">Side View</button>
+  </div>
+
+  <div id="ui-layer">
+    <button class="mic-btn" id="micBtn" title="Speak">
+      <svg viewBox="0 0 24 24">
+        <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
+        <path
+          d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+      </svg>
+    </button>
+    <div class="input-box">
+      <input type="text" id="inputText" placeholder="Type text or say 'hello', 'thanks'..." autocomplete="off">
+      <button class="send-btn" id="sendBtn">SIGN</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import TWEEN from 'tween';
+
+    // ============ SCENE SETUP ============
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x1a1a2e);
+    scene.fog = new THREE.Fog(0x1a1a2e, 4, 18);
+
+    const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 1.35, 2.2);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.2;
+    document.body.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 1.3, 0);
+    controls.enablePan = false;
+    controls.minDistance = 1;
+    controls.maxDistance = 5;
+    controls.update();
+
+    // ============ LIGHTING (Three-Point + Ambient) ============
+    const ambientLight = new THREE.HemisphereLight(0xffeedd, 0x080820, 0.6);
+    scene.add(ambientLight);
+
+    // Key Light (main)
+    const keyLight = new THREE.DirectionalLight(0xfff5e6, 1.2);
+    keyLight.position.set(2, 4, 3);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.width = 2048;
+    keyLight.shadow.mapSize.height = 2048;
+    keyLight.shadow.camera.near = 0.5;
+    keyLight.shadow.camera.far = 15;
+    keyLight.shadow.bias = -0.0001;
+    scene.add(keyLight);
+
+    // Fill Light (softer, opposite side)
+    const fillLight = new THREE.DirectionalLight(0xe6f0ff, 0.4);
+    fillLight.position.set(-3, 2, 2);
+    scene.add(fillLight);
+
+    // Rim Light (backlight for silhouette)
+    const rimLight = new THREE.SpotLight(0x88ccff, 1.5);
+    rimLight.position.set(-1, 3, -3);
+    rimLight.angle = 0.5;
+    scene.add(rimLight);
+
+    // ============ ENVIRONMENT ============
+    // Gradient backdrop
+    const bgGeom = new THREE.PlaneGeometry(30, 30);
+    const bgMat = new THREE.MeshStandardMaterial({
+      color: 0x2d2d44,
+      roughness: 1,
+      metalness: 0
+    });
+    const backdrop = new THREE.Mesh(bgGeom, bgMat);
+    backdrop.position.z = -4;
+    backdrop.receiveShadow = true;
+    scene.add(backdrop);
+
+    // Floor
+    const floorMat = new THREE.MeshStandardMaterial({
+      color: 0x252536,
+      roughness: 0.9,
+      metalness: 0.1
+    });
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.receiveShadow = true;
+    scene.add(floor);
+
+    // ============ MATERIALS (Enhanced) ============
+    const skinMat = new THREE.MeshStandardMaterial({
+      color: 0xd4a574,
+      roughness: 0.55,
+      metalness: 0.05
+    });
+
+    const suitMat = new THREE.MeshStandardMaterial({
+      color: 0x1e293b,
+      roughness: 0.7,
+      metalness: 0.1
+    });
+
+    const shirtMat = new THREE.MeshStandardMaterial({
+      color: 0xf8fafc,
+      roughness: 0.4
+    });
+
+    const hairMat = new THREE.MeshStandardMaterial({
+      color: 0x1a1a1a,
+      roughness: 0.85
+    });
+
+    const lipMat = new THREE.MeshStandardMaterial({
+      color: 0xb87070,
+      roughness: 0.4
+    });
+
+    const eyeWhiteMat = new THREE.MeshStandardMaterial({
+      color: 0xfefefe,
+      roughness: 0.1
+    });
+
+    const irisMat = new THREE.MeshStandardMaterial({
+      color: 0x4a3728,
+      roughness: 0.3,
+      metalness: 0.2
+    });
+
+    const pupilMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+
+    const corneaMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.0,
+      metalness: 0.0,
+      transparent: true,
+      opacity: 0.15
+    });
+
+    const eyebrowMat = new THREE.MeshStandardMaterial({
+      color: 0x2a2a2a,
+      roughness: 0.9
+    });
+
+    // ============ AVATAR GROUP ============
+    const avatar = new THREE.Group();
+    scene.add(avatar);
+
+    // ============ BODY ============
+    // Torso
+    const torsoGeom = new THREE.CylinderGeometry(0.26, 0.24, 0.72, 16);
+    const torso = new THREE.Mesh(torsoGeom, suitMat);
+    torso.position.y = 1.04;
+    torso.castShadow = true;
+    avatar.add(torso);
+
+    // Shoulders (wider appearance)
+    const shoulderGeom = new THREE.CapsuleGeometry(0.09, 0.48, 8, 16);
+    const shoulders = new THREE.Mesh(shoulderGeom, suitMat);
+    shoulders.rotation.z = Math.PI / 2;
+    shoulders.position.set(0, 1.36, 0);
+    shoulders.castShadow = true;
+    avatar.add(shoulders);
+
+    // Legs
+    const legGeom = new THREE.CylinderGeometry(0.1, 0.085, 0.85);
+    const leftLeg = new THREE.Mesh(legGeom, suitMat);
+    leftLeg.position.set(-0.12, 0.28, 0);
+    leftLeg.castShadow = true;
+    avatar.add(leftLeg);
+
+    const rightLeg = new THREE.Mesh(legGeom, suitMat);
+    rightLeg.position.set(0.12, 0.28, 0);
+    rightLeg.castShadow = true;
+    avatar.add(rightLeg);
+
+    // Collar
+    const collarGeom = new THREE.CylinderGeometry(0.12, 0.14, 0.12, 12);
+    const collar = new THREE.Mesh(collarGeom, shirtMat);
+    collar.position.y = 1.42;
+    avatar.add(collar);
+
+    // Tie
+    const tieGeom = new THREE.CylinderGeometry(0.04, 0.055, 0.48, 4);
+    const tieMat = new THREE.MeshStandardMaterial({ color: 0x7c2d12, roughness: 0.6 });
+    const tie = new THREE.Mesh(tieGeom, tieMat);
+    tie.position.set(0, 1.22, 0.16);
+    tie.scale.z = 0.45;
+    tie.rotation.y = Math.PI / 4;
+    avatar.add(tie);
+
+    // ============ REALISTIC HEAD ============
+    const headGroup = new THREE.Group();
+    headGroup.position.y = 1.58;
+    avatar.add(headGroup);
+
+    // Cranium (main head shape - rounder, more human)
+    const craniumGeom = new THREE.SphereGeometry(0.17, 32, 32);
+    const cranium = new THREE.Mesh(craniumGeom, skinMat);
+    cranium.scale.set(1.05, 1.15, 1.0);
+    cranium.position.y = 0.02;
+    cranium.castShadow = true;
+    headGroup.add(cranium);
+
+    // Face front (gives more forward projection)
+    const faceFrontGeom = new THREE.SphereGeometry(0.14, 24, 24);
+    const faceFront = new THREE.Mesh(faceFrontGeom, skinMat);
+    faceFront.position.set(0, -0.02, 0.06);
+    faceFront.scale.set(1.1, 1.0, 0.7);
+    headGroup.add(faceFront);
+
+    // Jaw Group (for mouth animation)
+    const jawGroup = new THREE.Group();
+    jawGroup.position.y = -0.02;
+    headGroup.add(jawGroup);
+
+    // Lower face / jaw - more defined
+    const jawGeom = new THREE.SphereGeometry(0.13, 32, 24);
+    const jaw = new THREE.Mesh(jawGeom, skinMat);
+    jaw.position.set(0, -0.08, 0.04);
+    jaw.scale.set(1.1, 0.9, 0.85);
+    jaw.castShadow = true;
+    jawGroup.add(jaw);
+
+    // Chin - more prominent
+    const chinGeom = new THREE.SphereGeometry(0.045, 16, 16);
+    const chin = new THREE.Mesh(chinGeom, skinMat);
+    chin.position.set(0, -0.16, 0.09);
+    chin.scale.set(1.0, 0.7, 0.8);
+    jawGroup.add(chin);
+
+    // Cheekbones - more defined
+    const cheekGeom = new THREE.SphereGeometry(0.06, 12, 12);
+    const leftCheek = new THREE.Mesh(cheekGeom, skinMat);
+    leftCheek.position.set(-0.1, -0.04, 0.1);
+    leftCheek.scale.set(0.9, 0.6, 0.5);
+    headGroup.add(leftCheek);
+
+    const rightCheek = new THREE.Mesh(cheekGeom, skinMat);
+    rightCheek.position.set(0.1, -0.04, 0.1);
+    rightCheek.scale.set(0.9, 0.6, 0.5);
+    headGroup.add(rightCheek);
+
+    // Blush (soft pink) for a more beautiful look
+    const blushGeom = new THREE.SphereGeometry(0.03, 12, 12);
+    const blushMat = new THREE.MeshStandardMaterial({ color: 0xffc0cb, roughness: 0.8, transparent: true, opacity: 0.5 });
+    const leftBlush = new THREE.Mesh(blushGeom, blushMat);
+    leftBlush.position.set(-0.12, -0.02, 0.12);
+    leftBlush.scale.set(0.8, 0.5, 0.5);
+    headGroup.add(leftBlush);
+    const rightBlush = new THREE.Mesh(blushGeom, blushMat);
+    rightBlush.position.set(0.12, -0.02, 0.12);
+    rightBlush.scale.set(0.8, 0.5, 0.5);
+    headGroup.add(rightBlush);
+
+    // Forehead (brow ridge) - softer
+    const browRidgeGeom = new THREE.CapsuleGeometry(0.02, 0.16, 4, 8);
+    const browRidge = new THREE.Mesh(browRidgeGeom, skinMat);
+    browRidge.rotation.z = Math.PI / 2;
+    browRidge.position.set(0, 0.06, 0.14);
+    headGroup.add(browRidge);
+
+
+    // ============ NOSE (More Realistic) ============
+    const noseGroup = new THREE.Group();
+    noseGroup.position.set(0, -0.02, 0.16);
+    headGroup.add(noseGroup);
+
+    // Nose bridge - smoother
+    const bridgeGeom = new THREE.CapsuleGeometry(0.012, 0.06, 4, 8);
+    const bridge = new THREE.Mesh(bridgeGeom, skinMat);
+    bridge.position.y = 0.02;
+    noseGroup.add(bridge);
+
+    // Nose tip - rounder
+    const noseTipGeom = new THREE.SphereGeometry(0.025, 12, 12);
+    const noseTip = new THREE.Mesh(noseTipGeom, skinMat);
+    noseTip.position.set(0, -0.025, 0.015);
+    noseTip.scale.set(1.2, 0.9, 1.0);
+    noseGroup.add(noseTip);
+
+    // Nose wings (sides)
+    const noseWingGeom = new THREE.SphereGeometry(0.018, 8, 8);
+    const leftNoseWing = new THREE.Mesh(noseWingGeom, skinMat);
+    leftNoseWing.position.set(-0.018, -0.03, 0.005);
+    noseGroup.add(leftNoseWing);
+    const rightNoseWing = new THREE.Mesh(noseWingGeom, skinMat);
+    rightNoseWing.position.set(0.018, -0.03, 0.005);
+    noseGroup.add(rightNoseWing);
+
+    // Nostrils - subtle dark spots
+    const nostrilGeom = new THREE.SphereGeometry(0.008, 8, 8);
+    const nostrilMat = new THREE.MeshStandardMaterial({ color: 0x6d5040, roughness: 0.9 });
+    const leftNostril = new THREE.Mesh(nostrilGeom, nostrilMat);
+    leftNostril.position.set(-0.012, -0.038, 0.012);
+    noseGroup.add(leftNostril);
+    const rightNostril = new THREE.Mesh(nostrilGeom, nostrilMat);
+    rightNostril.position.set(0.012, -0.038, 0.012);
+    noseGroup.add(rightNostril);
+
+    // ============ EYES (Realistic Multi-layer) ============
+    function createRealisticEye(x) {
+      const eyeGroup = new THREE.Group();
+      eyeGroup.position.set(x, 0.04, 0.13);
+
+      // Eye socket (slight indent)
+      const socketGeom = new THREE.SphereGeometry(0.045, 16, 16);
+      const socketMat = new THREE.MeshStandardMaterial({ color: 0xb8956d, roughness: 0.7 });
+      const socket = new THREE.Mesh(socketGeom, socketMat);
+      socket.scale.set(1.2, 0.8, 0.4);
+      socket.position.z = -0.01;
+      eyeGroup.add(socket);
+
+      // Eyeball (sclera)
+      const scleraGeom = new THREE.SphereGeometry(0.032, 24, 24);
+      const sclera = new THREE.Mesh(scleraGeom, eyeWhiteMat);
+      sclera.scale.set(1, 1, 0.6);
+      eyeGroup.add(sclera);
+
+      // Iris
+      const irisGeom = new THREE.CircleGeometry(0.014, 24);
+      const iris = new THREE.Mesh(irisGeom, irisMat);
+      iris.position.z = 0.019;
+      eyeGroup.add(iris);
+
+      // Pupil
+      const pupilGeom = new THREE.CircleGeometry(0.006, 16);
+      const pupil = new THREE.Mesh(pupilGeom, pupilMat);
+      pupil.position.z = 0.0195;
+      eyeGroup.add(pupil);
+
+      // Cornea (glossy overlay)
+      const corneaGeom = new THREE.SphereGeometry(0.033, 16, 16, 0, Math.PI * 2, 0, Math.PI * 0.5);
+      const cornea = new THREE.Mesh(corneaGeom, corneaMat);
+      cornea.rotation.x = -Math.PI / 2;
+      cornea.position.z = 0.005;
+      eyeGroup.add(cornea);
+
+      // Upper eyelid
+      const upperLidGeom = new THREE.SphereGeometry(0.036, 16, 16, 0, Math.PI * 2, 0, Math.PI * 0.45);
+      const upperLid = new THREE.Mesh(upperLidGeom, skinMat);
+      upperLid.rotation.x = -Math.PI / 2 + 0.3;
+      upperLid.position.set(0, 0.005, 0);
+
+      // Lower eyelid
+      const lowerLidGeom = new THREE.SphereGeometry(0.035, 16, 8, 0, Math.PI * 2, Math.PI * 0.6, Math.PI * 0.3);
+      const lowerLid = new THREE.Mesh(lowerLidGeom, skinMat);
+      lowerLid.position.y = -0.008;
+
+      return { group: eyeGroup, upperLid, lowerLid, sclera };
+    }
+
+    const leftEye = createRealisticEye(-0.06);
+    leftEye.group.add(leftEye.upperLid);
+    leftEye.group.add(leftEye.lowerLid);
+    headGroup.add(leftEye.group);
+
+    const rightEye = createRealisticEye(0.06);
+    rightEye.group.add(rightEye.upperLid);
+    rightEye.group.add(rightEye.lowerLid);
+    headGroup.add(rightEye.group);
+
+    // ============ EYEBROWS ============
+    const eyebrowGeom = new THREE.BoxGeometry(0.055, 0.012, 0.02);
+    const leftEyebrow = new THREE.Mesh(eyebrowGeom, eyebrowMat);
+    leftEyebrow.position.set(-0.06, 0.1, 0.15);
+    leftEyebrow.rotation.z = -0.15;
+    headGroup.add(leftEyebrow);
+
+    const rightEyebrow = new THREE.Mesh(eyebrowGeom, eyebrowMat);
+    rightEyebrow.position.set(0.06, 0.1, 0.15);
+    rightEyebrow.rotation.z = 0.15;
+    headGroup.add(rightEyebrow);
+
+    // ============ MOUTH & LIPS (Enhanced) ============
+    const mouthRig = new THREE.Group();
+    mouthRig.position.set(0, -0.1, 0.165);
+    headGroup.add(mouthRig);
+
+    // Upper lip
+    const upperLipGeom = new THREE.TorusGeometry(0.028, 0.008, 6, 16, Math.PI);
+    const upperLip = new THREE.Mesh(upperLipGeom, lipMat);
+    upperLip.rotation.z = Math.PI;
+    upperLip.position.y = 0.005;
+    mouthRig.add(upperLip);
+
+    // Lower lip (in group for animation)
+    const lowerLipGroup = new THREE.Group();
+    mouthRig.add(lowerLipGroup);
+    const lowerLipGeom = new THREE.TorusGeometry(0.03, 0.009, 6, 16, Math.PI);
+    const lowerLip = new THREE.Mesh(lowerLipGeom, lipMat);
+    lowerLip.position.y = -0.003;
+    lowerLipGroup.add(lowerLip);
+
+    // Philtrum (groove above upper lip)
+    const philtrumGeom = new THREE.BoxGeometry(0.015, 0.025, 0.01);
+    const philtrum = new THREE.Mesh(philtrumGeom, skinMat);
+    philtrum.position.set(0, 0.025, 0);
+    mouthRig.add(philtrum);
+
+    // ============ EARS ============
+    function createEar(x, flip = false) {
+      const earGroup = new THREE.Group();
+      earGroup.position.set(x, 0, -0.02);
+
+      const outerEarGeom = new THREE.TorusGeometry(0.04, 0.012, 8, 12, Math.PI * 1.3);
+      const outerEar = new THREE.Mesh(outerEarGeom, skinMat);
+      outerEar.rotation.y = flip ? -Math.PI / 2 : Math.PI / 2;
+      outerEar.rotation.z = -0.3;
+      earGroup.add(outerEar);
+
+      const earLobeGeom = new THREE.SphereGeometry(0.018, 8, 8);
+      const earLobe = new THREE.Mesh(earLobeGeom, skinMat);
+      earLobe.position.set(0, -0.035, 0.01);
+      earGroup.add(earLobe);
+
+      return earGroup;
+    }
+
+    const leftEar = createEar(-0.18, false);
+    headGroup.add(leftEar);
+    const rightEar = createEar(0.18, true);
+    headGroup.add(rightEar);
+
+    // ============ HAIR ============
+    const hairGeom = new THREE.SphereGeometry(0.2, 32, 32, 0, Math.PI * 2, 0, Math.PI * 0.55);
+    const hair = new THREE.Mesh(hairGeom, hairMat);
+    hair.position.y = 0.03;
+    hair.scale.set(1.08, 1.15, 1.1);
+    hair.castShadow = true;
+    headGroup.add(hair);
+
+    // Side hair
+    const sideHairGeom = new THREE.SphereGeometry(0.06, 12, 12);
+    const leftSideHair = new THREE.Mesh(sideHairGeom, hairMat);
+    leftSideHair.position.set(-0.17, 0.03, 0);
+    leftSideHair.scale.set(0.5, 1.2, 0.8);
+    headGroup.add(leftSideHair);
+
+    const rightSideHair = new THREE.Mesh(sideHairGeom, hairMat);
+    rightSideHair.position.set(0.17, 0.03, 0);
+    rightSideHair.scale.set(0.5, 1.2, 0.8);
+    headGroup.add(rightSideHair);
+
+    // ============ NECK ============
+    const neckGeom = new THREE.CylinderGeometry(0.08, 0.1, 0.12, 12);
+    const neck = new THREE.Mesh(neckGeom, skinMat);
+    neck.position.y = 1.46;
+    neck.castShadow = true;
+    avatar.add(neck);
+
+    // ============ VISEMES (Lip Sync) ============
+    const VISEMES = {
+      'rest': { jaw: 0, width: 1, lower: 0 },
+      'a': { jaw: 0.18, width: 1.1, lower: 0.035 },
+      'o': { jaw: 0.2, width: 0.65, lower: 0.08 },
+      'm': { jaw: 0, width: 1.15, lower: -0.01 },
+      'e': { jaw: 0.06, width: 1.25, lower: 0.02 },
+      'i': { jaw: 0.04, width: 1.3, lower: 0.015 },
+      'u': { jaw: 0.1, width: 0.5, lower: 0.06 }
+    };
+
+    function setViseme(char, duration = 150) {
+      const v = VISEMES[char] || VISEMES['rest'];
+      new TWEEN.Tween(jawGroup.rotation).to({ x: v.jaw }, duration).easing(TWEEN.Easing.Quadratic.Out).start();
+      new TWEEN.Tween(mouthRig.scale).to({ x: v.width }, duration).easing(TWEEN.Easing.Quadratic.Out).start();
+      new TWEEN.Tween(lowerLipGroup.position).to({ y: -v.lower }, duration).easing(TWEEN.Easing.Quadratic.Out).start();
+    }
+
+    // ============ HAND CREATION FUNCTION ============
+    function createHand(isRight = true) {
+      const handGroup = {
+        shoulder: new THREE.Group(),
+        arm: new THREE.Group(),
+        elbow: new THREE.Group(),
+        wrist: new THREE.Group(),
+        palm: new THREE.Group(),
+        fingers: {}
+      };
+
+      const xMirror = isRight ? 1 : -1;
+
+      // Shoulder position - arms connect directly to shoulder edges
+      handGroup.shoulder.position.set(0.28 * xMirror, 1.36, 0);
+      avatar.add(handGroup.shoulder);
+
+      // Upper arm - connects directly to shoulder
+      handGroup.shoulder.add(handGroup.arm);
+      const upperArmGeom = new THREE.CylinderGeometry(0.07, 0.06, 0.45);
+      const upperArm = new THREE.Mesh(upperArmGeom, suitMat);
+      upperArm.position.y = -0.22;
+      upperArm.castShadow = true;
+      handGroup.arm.add(upperArm);
+
+      // Elbow joint
+      handGroup.elbow.position.y = -0.45;
+      handGroup.arm.add(handGroup.elbow);
+
+      // Forearm
+      const forearmGeom = new THREE.CylinderGeometry(0.055, 0.04, 0.35);
+      const forearm = new THREE.Mesh(forearmGeom, suitMat);
+      forearm.position.y = -0.18;
+      forearm.castShadow = true;
+      handGroup.elbow.add(forearm);
+
+      // Wrist
+      handGroup.wrist.position.y = -0.35;
+      handGroup.elbow.add(handGroup.wrist);
+
+      // Palm
+      const palmGeom = new THREE.BoxGeometry(0.09, 0.11, 0.028);
+      const palmMesh = new THREE.Mesh(palmGeom, skinMat);
+      palmMesh.position.y = -0.055;
+      palmMesh.castShadow = true;
+      handGroup.wrist.add(palmMesh);
+      handGroup.wrist.add(handGroup.palm);
+
+      // Create fingers (CORRECTED rotation direction)
+      function createFinger(name, xPos, length) {
+        const fingerRoot = new THREE.Group();
+        fingerRoot.position.set(xPos, -0.11, 0);
+        handGroup.palm.add(fingerRoot);
+
+        // Proximal phalanx
+        const proximal = new THREE.Group();
+        fingerRoot.add(proximal);
+        const proxGeom = new THREE.BoxGeometry(0.02, length * 0.5, 0.02);
+        const proxMesh = new THREE.Mesh(proxGeom, skinMat);
+        proxMesh.position.y = -length * 0.25;
+        proxMesh.castShadow = true;
+        proximal.add(proxMesh);
+
+        // Distal phalanx (tip)
+        const distal = new THREE.Group();
+        distal.position.y = -length * 0.5;
+        proximal.add(distal);
+        const distGeom = new THREE.BoxGeometry(0.017, length * 0.5, 0.018);
+        const distMesh = new THREE.Mesh(distGeom, skinMat);
+        distMesh.position.y = -length * 0.25;
+        distMesh.castShadow = true;
+        distal.add(distMesh);
+
+        // Fingertip (rounded)
+        const tipGeom = new THREE.SphereGeometry(0.01, 8, 8);
+        const tipMesh = new THREE.Mesh(tipGeom, skinMat);
+        tipMesh.position.y = -length * 0.5;
+        distal.add(tipMesh);
+
+        handGroup.fingers[name] = { proximal, distal, root: fingerRoot };
+      }
+
+      // Create all fingers
+      createFinger('thumb', 0.05 * xMirror, 0.085);
+      createFinger('index', 0.038 * xMirror, 0.12);
+      createFinger('middle', 0.013 * xMirror, 0.13);
+      createFinger('ring', -0.013 * xMirror, 0.12);
+      createFinger('pinky', -0.038 * xMirror, 0.095);
+
+      // Thumb special positioning
+      handGroup.fingers['thumb'].root.position.set(0.05 * xMirror, -0.04, 0.02);
+      handGroup.fingers['thumb'].root.rotation.z = -0.7 * xMirror;
+
+      return handGroup;
+    }
+
+    // ============ CREATE BOTH HANDS ============
+    const rightHand = createHand(true);
+    const leftHand = createHand(false);
+
+    // Right hand - Active signing position (palm facing viewer)
+    rightHand.shoulder.rotation.z = -0.08;
+    rightHand.arm.rotation.set(-0.3, 0, 0.25);
+    rightHand.elbow.rotation.x = -1.6;
+    rightHand.elbow.rotation.y = 1.2;
+    // Wrist rotated so PALM faces camera (not back of hand)
+    rightHand.wrist.rotation.set(1.8, 0, 0);
+
+    // Left hand - Relaxed at side
+    leftHand.shoulder.rotation.z = 0.08;
+    leftHand.arm.rotation.set(0.1, 0, -0.06);
+    leftHand.elbow.rotation.x = -0.25;
+    leftHand.wrist.rotation.set(0, 0, 0);
+
+    // ============ ASL POSE DICTIONARY (CORRECTED DIRECTIONS) ============
+    // Format: [proximalBend, distalBend, spread]
+    // Positive X rotation = fingers curl FORWARD (correct human direction)
+    const POSES = {
+      'neutral': { t: [0, 0, 0], i: [0, 0, 0], m: [0, 0, 0], r: [0, 0, 0], p: [0, 0, 0] },
+      'a': { t: [0.3, 0.2, 0.3], i: [1.5, 1.4, 0], m: [1.5, 1.4, 0], r: [1.5, 1.4, 0], p: [1.5, 1.4, 0] },
+      'b': { t: [1.4, 0.5, -0.4], i: [0, 0, 0], m: [0, 0, 0], r: [0, 0, 0], p: [0, 0, 0] },
+      'c': { t: [0.4, 0.2, 0.2], i: [0.5, 0.5, 0.1], m: [0.5, 0.5, 0], r: [0.5, 0.5, 0], p: [0.5, 0.5, -0.1] },
+      'd': { t: [1.3, 0, -0.3], i: [0, 0, 0], m: [1.5, 1.4, 0], r: [1.5, 1.4, 0], p: [1.5, 1.4, 0] },
+      'e': { t: [1.3, 0.8, -0.4], i: [1.6, 0.9, 0], m: [1.6, 0.9, 0], r: [1.6, 0.9, 0], p: [1.6, 0.9, 0] },
+      'f': { t: [0.5, 0.3, 0.1], i: [0.5, 0.7, 0], m: [0, 0, 0.1], r: [0, 0, 0.15], p: [0, 0, 0.2] },
+      'g': { t: [0, 0, 0.3], i: [0, 0, 0], m: [1.5, 1.4, 0], r: [1.5, 1.4, 0], p: [1.5, 1.4, 0] },
+      'h': { t: [1.4, 0, -0.3], i: [0, 0, 0.1], m: [0, 0, -0.1], r: [1.5, 1.4, 0], p: [1.5, 1.4, 0] },
+      'i': { t: [1.3, 0.8, -0.3], i: [1.5, 1.4, 0], m: [1.5, 1.4, 0], r: [1.5, 1.4, 0], p: [0, 0, 0] },
+      'j': { t: [1.3, 0.8, -0.3], i: [1.5, 1.4, 0], m: [1.5, 1.4, 0], r: [1.5, 1.4, 0], p: [0, 0, 0] },
+      'k': { t: [0.2, 0, 0], i: [0, 0, 0.15], m: [0.3, 0, -0.15], r: [1.5, 1.4, 0], p: [1.5, 1.4, 0] },
+      'l': { t: [0, 0, 0.3], i: [0, 0, 0], m: [1.5, 1.4, 0], r: [1.5, 1.4, 0], p: [1.5, 1.4, 0] },
+      'm': { t: [1.4, 0, -0.5], i: [1.1, 0.9, 0], m: [1.1, 0.9, 0], r: [1.1, 0.9, 0], p: [1.5, 1.4, 0] },
+      'n': { t: [1.4, 0, -0.5], i: [1.1, 0.9, 0], m: [1.1, 0.9, 0], r: [1.5, 1.4, 0], p: [1.5, 1.4, 0] },
+      'o': { t: [0.7, 0.4, 0.1], i: [1.1, 0.7, 0], m: [1.1, 0.7, 0], r: [1.1, 0.7, 0], p: [1.1, 0.7, 0] },
+      'p': { t: [0.2, 0, 0], i: [0.2, 0, 0], m: [1.4, 0, 0], r: [1.5, 1.4, 0], p: [1.5, 1.4, 0] },
+      'q': { t: [0.2, 0, 0.3], i: [0.3, 0.2, 0], m: [1.5, 1.4, 0], r: [1.5, 1.4, 0], p: [1.5, 1.4, 0] },
+      'r': { t: [1.4, 0, -0.3], i: [0, 0, 0.1], m: [0.3, 0.2, 0], r: [1.5, 1.4, 0], p: [1.5, 1.4, 0] },
+      's': { t: [1.1, 0.4, -0.4], i: [1.5, 1.4, 0], m: [1.5, 1.4, 0], r: [1.5, 1.4, 0], p: [1.5, 1.4, 0] },
+      't': { t: [0.8, 0, -0.35], i: [1.3, 0.9, 0], m: [1.5, 1.4, 0], r: [1.5, 1.4, 0], p: [1.5, 1.4, 0] },
+      'u': { t: [1.4, 0, -0.3], i: [0, 0, 0], m: [0, 0, 0], r: [1.5, 1.4, 0], p: [1.5, 1.4, 0] },
+      'v': { t: [1.4, 0, -0.3], i: [0, 0, 0.2], m: [0, 0, -0.2], r: [1.5, 1.4, 0], p: [1.5, 1.4, 0] },
+      'w': { t: [1.4, 0, -0.3], i: [0, 0, 0.15], m: [0, 0, 0], r: [0, 0, -0.15], p: [1.5, 1.4, 0] },
+      'x': { t: [1.4, 0, -0.3], i: [0.9, 1.4, 0], m: [1.5, 1.4, 0], r: [1.5, 1.4, 0], p: [1.5, 1.4, 0] },
+      'y': { t: [0, 0, 0.4], i: [1.5, 1.4, 0], m: [1.5, 1.4, 0], r: [1.5, 1.4, 0], p: [0, 0, 0.4] },
+      'z': { t: [1.4, 0, -0.3], i: [0, 0, 0], m: [1.5, 1.4, 0], r: [1.5, 1.4, 0], p: [1.5, 1.4, 0] }
+    };
+
+    // ============ WORD SIGN ANIMATIONS ============
+    const WORD_SIGNS = {
+      'hello': {
+        type: 'movement',
+        camera: 'side',
+        keyframes: [
+          { time: 0, pose: 'b' },
+          { time: 200, pose: 'b' },
+          { time: 400, pose: 'b' },
+          { time: 600, pose: 'b' },
+          { time: 800, pose: 'b' },
+          { time: 1000, pose: 'b' }
+        ]
+      },
+      'thanks': {
+        type: 'movement',
+        camera: 'face',
+        keyframes: [
+          { time: 0, pose: 'b', armPos: [-0.3, 0, 0.2] },
+          { time: 300, pose: 'b', armPos: [-0.3, 0, 0.5] },
+          { time: 600, pose: 'b', armPos: [-0.5, 0.2, 0.3] }
+        ]
+      },
+      'yes': {
+        type: 'movement',
+        camera: 'default',
+        keyframes: [
+          { time: 0, pose: 's' },
+          { time: 200, pose: 's' },
+          { time: 400, pose: 's' },
+          { time: 600, pose: 's' },
+          { time: 800, pose: 's' }
+        ]
+      },
+      'no': {
+        type: 'movement',
+        camera: 'hand',
+        keyframes: [
+          { time: 0, pose: 'h', spreadFingers: { i: 0.3, m: -0.3 } },
+          { time: 250, pose: 'h', spreadFingers: { i: 0, m: 0 } },
+          { time: 500, pose: 'h', spreadFingers: { i: 0.3, m: -0.3 } },
+          { time: 750, pose: 'h', spreadFingers: { i: 0, m: 0 } }
+        ]
+      }
+    };
+
+    // ============ CAMERA PRESETS ============
+    const CAMERA_PRESETS = {
+      'default': { pos: [0, 1.35, 2.2], target: [0, 1.3, 0] },
+      'hand': { pos: [0.3, 1.4, 1.2], target: [0.3, 1.2, 0] },
+      'face': { pos: [0, 1.55, 1.4], target: [0, 1.55, 0] },
+      'full': { pos: [0, 1.1, 3.8], target: [0, 1.0, 0] },
+      'side': { pos: [1.3, 1.35, 1.5], target: [0, 1.3, 0] }
+    };
+
+    let currentCameraPreset = 'default';
+
+    function setCameraAngle(preset, duration = 600) {
+      const p = CAMERA_PRESETS[preset] || CAMERA_PRESETS['default'];
+      currentCameraPreset = preset;
+
+      new TWEEN.Tween(camera.position)
+        .to({ x: p.pos[0], y: p.pos[1], z: p.pos[2] }, duration)
+        .easing(TWEEN.Easing.Quadratic.InOut)
+        .start();
+
+      new TWEEN.Tween(controls.target)
+        .to({ x: p.target[0], y: p.target[1], z: p.target[2] }, duration)
+        .easing(TWEEN.Easing.Quadratic.InOut)
+        .onUpdate(() => controls.update())
+        .start();
+
+      // Update UI buttons
+      document.querySelectorAll('.cam-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.cam === preset);
+      });
+    }
+
+    // Camera button listeners
+    document.querySelectorAll('.cam-btn').forEach(btn => {
+      btn.addEventListener('click', () => setCameraAngle(btn.dataset.cam));
+    });
+
+    // ============ HAND POSE ANIMATION (CORRECTED) ============
+    function moveHand(char, duration = 200) {
+      const pose = POSES[char] || POSES['neutral'];
+      const fingerMap = { t: 'thumb', i: 'index', m: 'middle', r: 'ring', p: 'pinky' };
+
+      Object.keys(fingerMap).forEach(key => {
+        const fingerName = fingerMap[key];
+        const finger = rightHand.fingers[fingerName];
+        const vals = pose[key];
+
+        if (!finger || !vals) return;
+
+        // CORRECTED: Negate rotation to curl INWARD toward palm
+        // Proximal rotation (first joint) - negative = curl inward
+        new TWEEN.Tween(finger.proximal.rotation)
+          .to({ x: -vals[0] }, duration)
+          .easing(TWEEN.Easing.Quadratic.Out)
+          .start();
+
+        // Distal rotation (second joint) - negative = curl inward
+        new TWEEN.Tween(finger.distal.rotation)
+          .to({ x: -vals[1] }, duration)
+          .easing(TWEEN.Easing.Quadratic.Out)
+          .start();
+
+        // Spread (Z rotation)
+        if (vals[2] !== undefined) {
+          let spreadVal = vals[2];
+          if (key === 't') spreadVal = -0.7 + vals[2]; // Thumb offset
+          new TWEEN.Tween(finger.root.rotation)
+            .to({ z: spreadVal }, duration)
+            .easing(TWEEN.Easing.Quadratic.Out)
+            .start();
+        }
+      });
+    }
+
+    // ============ WORD SIGN ANIMATOR ============
+    async function playWordSign(word) {
+      const sign = WORD_SIGNS[word.toLowerCase()];
+      if (!sign) return false;
+
+      // Set camera for sign type
+      // Camera stays under user control - no automatic switching
+
+      // Play keyframes
+      for (let i = 0; i < sign.keyframes.length; i++) {
+        const kf = sign.keyframes[i];
+        const nextTime = sign.keyframes[i + 1]?.time || kf.time + 200;
+        const dur = nextTime - kf.time;
+
+        if (kf.pose) moveHand(kf.pose, dur);
+
+        if (kf.wristRot) {
+          new TWEEN.Tween(rightHand.wrist.rotation)
+            .to({ x: kf.wristRot[0], y: kf.wristRot[1], z: kf.wristRot[2] }, dur)
+            .start();
+        }
+
+        if (kf.armPos) {
+          new TWEEN.Tween(rightHand.arm.rotation)
+            .to({ x: kf.armPos[0], y: kf.armPos[1], z: kf.armPos[2] }, dur)
+            .start();
+        }
+
+        await new Promise(r => setTimeout(r, dur));
+      }
+
+      // Reset after animation
+      await new Promise(r => setTimeout(r, 300));
+      // Camera stays under user control
+      return true;
+    }
+
+    // ============ MAIN PLAYBACK ============
+    const display = document.getElementById('word-display');
+
+    async function play(items) {
+      for (let item of items) {
+        let word = item.replace('.gif', '').replace('/images/', '').toLowerCase();
+        display.innerText = word.toUpperCase();
+
+        // Check for full word sign first
+        if (WORD_SIGNS[word]) {
+          await playWordSign(word);
+          continue;
+        }
+
+        // Fingerspelling - camera stays under user control
+
+        for (let char of word) {
+          if (!char.match(/[a-z]/)) continue;
+
+          display.innerText = char.toUpperCase();
+          moveHand(char, 220);
+          setViseme(char, 220);
+          await new Promise(r => setTimeout(r, 650));
+        }
+
+        setViseme('rest', 280);
+        moveHand('neutral', 280);
+        await new Promise(r => setTimeout(r, 350));
+      }
+
+      display.innerText = "READY";
+      // Camera stays under user control
+    }
+
+    async function go(text) {
+      try {
+        const response = await fetch('/translate', {
+          method: 'POST',
+          body: JSON.stringify({ text }),
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await response.json();
+        play(data.paths);
+      } catch (e) {
+        // Fallback: if server fails, just play text directly
+        play(text.split(' '));
+      }
+    }
+
+    // ============ ANIMATION LOOP ============
+    function animate() {
+      requestAnimationFrame(animate);
+      TWEEN.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    // ============ BLINKING ============
+    function blink() {
+      const blinkDur = 120;
+      new TWEEN.Tween(leftEye.upperLid.rotation).to({ x: 0.8 }, blinkDur).yoyo(true).repeat(1).start();
+      new TWEEN.Tween(rightEye.upperLid.rotation).to({ x: 0.8 }, blinkDur).yoyo(true).repeat(1).start();
+    }
+    setInterval(blink, 3500 + Math.random() * 1500);
+
+    // ============ POLLING FOR TERMINAL COMMANDS ============
+    setInterval(async () => {
+      try {
+        const r = await fetch('/poll');
+        const d = await r.json();
+        if (d.command) go(d.command);
+      } catch (e) { }
+    }, 500);
+
+    // ============ UI HANDLERS ============
+    const inputField = document.getElementById('inputText');
+    const sendButton = document.getElementById('sendBtn');
+
+    sendButton.onclick = () => {
+      if (inputField.value.trim()) {
+        go(inputField.value);
+        inputField.value = '';
+      }
+    };
+
+    inputField.onkeydown = (e) => {
+      if (e.key === 'Enter' && inputField.value.trim()) {
+        go(inputField.value);
+        inputField.value = '';
+      }
+    };
+
+    // Voice input
+    if ('webkitSpeechRecognition' in window) {
+      const recognition = new webkitSpeechRecognition();
+      const micBtn = document.getElementById('micBtn');
+
+      micBtn.onclick = () => {
+        recognition.start();
+        micBtn.classList.add('listening');
+      };
+
+      recognition.onresult = (e) => {
+        const transcript = e.results[0][0].transcript;
+        micBtn.classList.remove('listening');
+        inputField.value = transcript;
+        go(transcript);
+      };
+
+      recognition.onerror = () => micBtn.classList.remove('listening');
+      recognition.onend = () => micBtn.classList.remove('listening');
+    }
+
+    // Resize handler
+    window.onresize = () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    };
+  </script>
+</body>
+
+</html>
